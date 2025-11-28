@@ -9,6 +9,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Home,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -22,11 +23,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { title: 'Análisis', href: '/analisis', icon: LineChart },
-  { title: 'Simulador', href: '/simulador', icon: Calculator },
-  { title: 'Historial', href: '/historial', icon: History },
-  { title: 'Documentación', href: '/documentacion', icon: BookOpen },
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'Análisis', href: '/dashboard/analisis', icon: LineChart },
+  { title: 'Simulador', href: '/dashboard/simulador', icon: Calculator },
+  { title: 'Historial', href: '/dashboard/historial', icon: History },
+  { title: 'Documentación', href: '/dashboard/documentacion', icon: BookOpen },
 ]
 
 interface SidebarProps {
@@ -41,6 +42,7 @@ export function Sidebar({ className }: SidebarProps) {
     <aside
       className={cn(
         'fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300',
+        'hidden lg:block', // Hide on mobile, show on desktop
         collapsed ? 'w-16' : 'w-64',
         className
       )}
@@ -95,6 +97,33 @@ export function Sidebar({ className }: SidebarProps) {
             return <div key={item.href}>{linkContent}</div>
           })}
         </nav>
+
+        <Separator />
+
+        {/* Back to Home */}
+        <div className="p-2">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  to="/"
+                  className="flex items-center justify-center rounded-lg px-2 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <Home className="h-5 w-5" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Volver al Inicio</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Link
+              to="/"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Home className="h-5 w-5 shrink-0" />
+              <span>Volver al Inicio</span>
+            </Link>
+          )}
+        </div>
 
         <Separator />
 

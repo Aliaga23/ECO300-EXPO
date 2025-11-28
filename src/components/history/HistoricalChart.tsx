@@ -218,10 +218,10 @@ export function HistoricalChart() {
         </div>
       </CardHeader>
 
-      <CardContent>
-        <div className="h-80 sm:h-96">
+      <CardContent className="px-2 sm:px-6">
+        <div className="h-[280px] sm:h-80 md:h-96 lg:h-[450px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart data={filteredData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} opacity={0.3} />
               <XAxis
                 dataKey="date"

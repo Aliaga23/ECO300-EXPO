@@ -25,8 +25,8 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* Page Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Panel de control para análisis de elasticidad USDT/BOB
           </p>
         </div>
@@ -59,21 +59,21 @@ export default function DashboardPage() {
                   icon={Calculator}
                   title="Nuevo Análisis"
                   description="Calcular elasticidad con datos reales"
-                  href="/analisis"
+                  href="/dashboard/analisis"
                   variant="primary"
                 />
                 <QuickActionCard
                   icon={TrendingUp}
                   title="Simulador"
                   description="Probar escenarios hipotéticos"
-                  href="/simulador"
+                  href="/dashboard/simulador"
                   variant="secondary"
                 />
                 <QuickActionCard
                   icon={BookOpen}
                   title="Documentación"
                   description="Metodología y guías de uso"
-                  href="/documentacion"
+                  href="/dashboard/documentacion"
                   variant="outline"
                 />
               </div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
                   <History className="h-4 w-4 text-primary" />
                   Cálculos Recientes
                 </CardTitle>
-                <Link to="/historial">
+                <Link to="/dashboard/historial">
                   <Button variant="ghost" size="sm">
                     Ver todo
                     <ArrowRight className="ml-1 h-3 w-3" />
@@ -101,7 +101,7 @@ export default function DashboardPage() {
                 <div className="text-center py-6 text-muted-foreground">
                   <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Sin cálculos recientes</p>
-                  <Link to="/analisis">
+                  <Link to="/dashboard/analisis">
                     <Button variant="link" size="sm" className="mt-2">
                       Realizar primer análisis
                     </Button>

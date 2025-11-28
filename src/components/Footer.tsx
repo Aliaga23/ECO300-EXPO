@@ -1,12 +1,12 @@
-import { Mail, Github, FileText } from "lucide-react"
+import { Link } from "react-router-dom"
 
 export function Footer() {
   return (
-    <footer className="py-12 lg:py-16 border-t border-border">
+    <footer className="py-12 lg:py-16 border-t border-border bg-background">
       <div className="w-full max-w-screen-2xl mx-auto px-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <div className="space-y-4">
-            <div className="font-bold text-xl tracking-tight text-foreground">Análisis USDT/BOB</div>
+            <div className="font-bold text-xl tracking-tight text-foreground">ElasticBot</div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Proyecto académico de investigación sobre elasticidad de demanda de criptomonedas en Bolivia.
             </p>
@@ -16,59 +16,51 @@ export function Footer() {
             <div className="font-semibold text-sm text-foreground">Herramientas</div>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="#features" className="hover:text-foreground transition-colors">
+                <Link to="/dashboard/analisis" className="hover:text-foreground transition-colors">
                   Calculadora de Elasticidad
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#features" className="hover:text-foreground transition-colors">
-                  Predictor con IA
-                </a>
+                <Link to="/dashboard/simulador" className="hover:text-foreground transition-colors">
+                  Simulador de Escenarios
+                </Link>
               </li>
               <li>
-                <a href="#features" className="hover:text-foreground transition-colors">
-                  Análisis de Mercado
-                </a>
+                <Link to="/dashboard" className="hover:text-foreground transition-colors">
+                  Panel de Control
+                </Link>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <div className="font-semibold text-sm text-foreground">Contacto</div>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover:bg-primary transition-colors text-foreground"
-              >
-                <Mail className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover:bg-primary transition-colors text-foreground"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center hover:bg-primary transition-colors text-foreground"
-              >
-                <FileText className="w-5 h-5" />
-              </a>
-            </div>
+            <div className="font-semibold text-sm text-foreground">Recursos</div>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link to="/dashboard/documentacion" className="hover:text-foreground transition-colors">
+                  Documentación
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard/historial" className="hover:text-foreground transition-colors">
+                  Historial de Cálculos
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Proyecto Académico USDT/BOB. Investigación Universitaria.
+            © {new Date().getFullYear()} ECO-300 • UAGRM • Economía para la Gestión
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <Link to="/dashboard/documentacion" className="hover:text-foreground transition-colors">
               Documentación
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Metodología
-            </a>
+            </Link>
+            <Link to="/dashboard" className="hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
           </div>
         </div>
       </div>

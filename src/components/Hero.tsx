@@ -1,12 +1,22 @@
 import { Button } from "@/components/ui/button"
-import { TrendingUp, Zap } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { TrendingUp, Zap, Activity } from "lucide-react"
 import { TradingChart } from "./TradingChart"
+import { Link } from "react-router-dom"
+import { useMarketData } from "@/hooks"
 
 export function Hero() {
+  const { snapshot, loading } = useMarketData(60000) // Refresh every 60s on landing
+
+  // Calculate premium over official rate (assuming 6.96 BOB)
+  const officialRate = 6.96
+  const currentPrice = snapshot?.averageSellPrice ?? 0
+  const premium = currentPrice > 0 ? ((currentPrice - officialRate) / officialRate * 100).toFixed(1) : '0'
+
   return (
     <section className="relative pt-24 pb-4 md:pt-32 md:pb-6 lg:pt-40 lg:pb-8 overflow-hidden">
-      <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#3b82f620_1px,transparent_1px),linear-gradient(to_bottom,#3b82f620_1px,transparent_1px)] bg-[size:40px_40px]" style={{ zIndex: 0 }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent" />
+      <div className="fixed inset-0 pointer-events-none bg-[linear-gradient(to_right,#3b82f620_1px,transparent_1px),linear-gradient(to_bottom,#3b82f620_1px,transparent_1px)] bg-size-[40px_40px]" style={{ zIndex: 0 }} />
+      <div className="absolute inset-0 bg-linear-to-b from-accent/5 via-transparent to-transparent" />
 
       <div className="absolute top-10 md:top-20 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-accent/10 rounded-full blur-[80px] md:blur-[120px] animate-pulse" />
       <div
@@ -35,36 +45,55 @@ export function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              <Button
-                size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm md:text-base font-semibold shadow-lg shadow-primary/20 border border-primary/50 h-11 md:h-12"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Analizar Ahora
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-sm md:text-base font-semibold bg-card border-border hover:bg-muted hover:border-primary/50 h-11 md:h-12 text-foreground"
-              >
-                Ver Documentación
-              </Button>
+              <Link to="/dashboard">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-sm md:text-base font-semibold shadow-lg shadow-primary/20 border border-primary/50 h-11 md:h-12"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Entrar al Dashboard
+                </Button>
+              </Link>
+              <Link to="/dashboard/documentacion">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto text-sm md:text-base font-semibold bg-card border-border hover:bg-muted hover:border-primary/50 h-11 md:h-12 text-foreground"
+                >
+                  Ver Documentación
+                </Button>
+              </Link>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 md:gap-6 lg:gap-8 pt-2 md:pt-4">
               <div>
-                <div className="text-2xl md:text-3xl font-bold text-foreground">98.5%</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Precisión del Modelo</div>
+                {loading ? (
+                  <Skeleton className="h-8 w-24 mb-1" />
+                ) : (
+                  <div className="text-2xl md:text-3xl font-bold text-foreground">
+                    {currentPrice > 0 ? `${currentPrice.toFixed(2)} BOB` : '—'}
+                  </div>
+                )}
+                <div className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
+                  <Activity className="h-3 w-3" />
+                  Precio USDT/BOB
+                </div>
+              </div>
+              <div className="w-px h-10 md:h-12 bg-border" />
+              <div>
+                {loading ? (
+                  <Skeleton className="h-8 w-16 mb-1" />
+                ) : (
+                  <div className="text-2xl md:text-3xl font-bold text-chart-1">
+                    +{premium}%
+                  </div>
+                )}
+                <div className="text-xs md:text-sm text-muted-foreground">Prima vs BCB</div>
               </div>
               <div className="w-px h-10 md:h-12 bg-border" />
               <div>
                 <div className="text-2xl md:text-3xl font-bold text-foreground">24/7</div>
                 <div className="text-xs md:text-sm text-muted-foreground">Datos en Tiempo Real</div>
-              </div>
-              <div className="w-px h-10 md:h-12 bg-border" />
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-foreground">IA</div>
-                <div className="text-xs md:text-sm text-muted-foreground">Análisis Predictivo</div>
               </div>
             </div>
           </div>
