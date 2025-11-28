@@ -11,7 +11,15 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5173,
     proxy: {
+      // Proxy for Django backend API
+      '/api/v1': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Legacy proxy for Binance P2P (direct access)
       '/api/binance': {
         target: 'https://p2p.binance.com',
         changeOrigin: true,
