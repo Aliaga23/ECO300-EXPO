@@ -33,6 +33,10 @@ export default function SimulatorPage() {
     errorMessage: null,
     createdAt: new Date(lastCalculation.created_at),
     completedAt: null,
+    calculationMetadata: lastCalculation.calculation_metadata || {
+      source: 'Unknown',
+      currency_pair: 'USDT/BOB',
+    },
   } : null
 
   return (
