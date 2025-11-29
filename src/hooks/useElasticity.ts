@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { elasticityApi, pollCalculationStatus, ApiException } from '@/services/api';
+import { elasticityApi, marketDataApi, pollCalculationStatus, ApiException } from '@/services/api';
 import type {
   CalculationRequest,
   CalculationStatusResponse,
   ParsedElasticityCalculation,
   CalculationSummary,
+  DataCoverage,
 } from '@/types/api';
 
 // ============================================
@@ -17,6 +18,7 @@ interface UseElasticityCalculationReturn {
   loading: boolean;
   polling: boolean;
   error: string | null;
+  failed: boolean; // True when calculation completed with FAILED status
   elapsedTime: number;
   startCalculation: (request: CalculationRequest) => Promise<void>;
   cancelPolling: () => void;
@@ -29,6 +31,7 @@ export function useElasticityCalculation(): UseElasticityCalculationReturn {
   const [loading, setLoading] = useState(false);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   
   const pollingCancelledRef = useRef(false);
@@ -60,6 +63,7 @@ export function useElasticityCalculation(): UseElasticityCalculationReturn {
     setLoading(true);
     setPolling(false);
     setError(null);
+    setFailed(false);
     setCalculation(null);
     setStatus(null);
     setElapsedTime(0);
@@ -91,7 +95,8 @@ export function useElasticityCalculation(): UseElasticityCalculationReturn {
       });
 
       if (!pollingCancelledRef.current) {
-        setCalculation(result);
+        setCalculation(result.calculation);
+        setFailed(result.failed);
         setPolling(false);
       }
     } catch (err) {
@@ -120,6 +125,7 @@ export function useElasticityCalculation(): UseElasticityCalculationReturn {
     setLoading(false);
     setPolling(false);
     setError(null);
+    setFailed(false);
     setElapsedTime(0);
   }, []);
 
@@ -129,6 +135,7 @@ export function useElasticityCalculation(): UseElasticityCalculationReturn {
     loading,
     polling,
     error,
+    failed,
     elapsedTime,
     startCalculation,
     cancelPolling,
@@ -219,4 +226,44 @@ export function useCalculationResult(): UseCalculationResultReturn {
   }, []);
 
   return { calculation, loading, error, load };
+}
+
+// ============================================
+// Data Coverage Hook
+// ============================================
+
+interface UseDataCoverageReturn {
+  coverage: DataCoverage | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+}
+
+export function useDataCoverage(): UseDataCoverageReturn {
+  const [coverage, setCoverage] = useState<DataCoverage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCoverage = useCallback(async () => {
+    try {
+      setLoading(true);
+      const result = await marketDataApi.getDataCoverage();
+      setCoverage(result);
+      setError(null);
+    } catch (err) {
+      if (err instanceof ApiException) {
+        setError(typeof err.detail === 'string' ? err.detail : 'Failed to fetch coverage');
+      } else {
+        setError('Failed to fetch data coverage');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCoverage();
+  }, [fetchCoverage]);
+
+  return { coverage, loading, error, refresh: fetchCoverage };
 }

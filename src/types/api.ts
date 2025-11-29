@@ -32,6 +32,43 @@ export interface MacroeconomicIndicator {
 }
 
 // ============================================
+// Aggregated Market Data Types (Backend-driven)
+// ============================================
+
+export type TimeRange = '24h' | '7d' | '30d' | '90d';
+export type Granularity = 'hourly' | 'daily' | 'weekly';
+export type DataSource = 'p2p' | 'ohlc' | 'all';
+
+export interface AggregatedDataPoint {
+  timestamp: string;
+  average_buy_price: number;
+  average_sell_price: number;
+  total_volume: number;
+  spread_percentage: number;
+  record_count: number;
+}
+
+export interface AggregatedMarketDataResponse {
+  time_range: TimeRange;
+  granularity: Granularity;
+  coverage_start: string;
+  coverage_end: string;
+  span_days: number;
+  data_source: string;
+  total_records: number;
+  aggregated_points: number;
+  points: AggregatedDataPoint[];
+}
+
+export interface AggregatedMarketDataRequest {
+  time_range?: TimeRange;
+  granularity?: Granularity;
+  source?: DataSource;
+  start_date?: string;
+  end_date?: string;
+}
+
+// ============================================
 // Elasticity Calculation Types
 // ============================================
 
@@ -61,9 +98,17 @@ export interface ConfidenceInterval {
   upper: number;
 }
 
+// Data source information from backend
+export interface DataSourceInfo {
+  type: string; // e.g., "external_ohlc_api"
+  timeframe?: string; // e.g., "1h"
+  quality_score?: number;
+}
+
 export interface CalculationMetadata {
   source: string;
   currency_pair: string;
+  data_source?: DataSourceInfo;
 }
 
 export interface ElasticityCalculation {
@@ -95,6 +140,9 @@ export interface CalculationSummary {
   elasticity_coefficient: string | null;
   classification: ElasticityClassification | null;
   created_at: string;
+  data_points_used?: number | null;
+  calculation_metadata?: CalculationMetadata | null;
+  error_message?: string | null;
 }
 
 // ============================================
@@ -201,4 +249,47 @@ export interface ParsedElasticityCalculation {
   errorMessage: string | null;
   createdAt: Date;
   completedAt: Date | null;
+  calculationMetadata: CalculationMetadata | null;
+}
+
+// ============================================
+// OHLC Types (for future candlestick charts)
+// ============================================
+
+export interface OHLCCandle {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface OHLCBar {
+  timestamp: Date;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface MarketSnapshotRawResponse {
+  source: string;
+  timeframe: string;
+  buy_candle?: OHLCCandle;
+  sell_candle?: OHLCCandle;
+}
+
+export interface ExtendedMarketSnapshot extends MarketSnapshot {
+  raw_response?: MarketSnapshotRawResponse;
+}
+
+// ============================================
+// Data Coverage Types
+// ============================================
+
+export interface DataCoverage {
+  min_date: string;
+  max_date: string;
+  total_snapshots: number;
+  source: string;
 }

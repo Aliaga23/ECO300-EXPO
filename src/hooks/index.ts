@@ -1,8 +1,8 @@
 // Market Data Hooks
-export { useMarketData, useBCBRate, useHistoricalData } from './useMarketData';
+export { useMarketData, useBCBRate, useHistoricalData, useAggregatedData, formatDataSource } from './useMarketData';
 
 // Elasticity Hooks
-export { useElasticityCalculation, useCalculationHistory, useCalculationResult } from './useElasticity';
+export { useElasticityCalculation, useCalculationHistory, useCalculationResult, useDataCoverage } from './useElasticity';
 
 // AI Interpretation Hook
 export { useInterpretation } from './useInterpretation';

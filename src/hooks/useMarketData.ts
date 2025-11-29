@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { marketDataApi, ApiException } from '@/services/api';
-import type { ParsedMarketSnapshot, MacroeconomicIndicator } from '@/types/api';
+import type { 
+  ParsedMarketSnapshot, 
+  MacroeconomicIndicator,
+  AggregatedMarketDataResponse,
+  TimeRange,
+  Granularity,
+  DataSource,
+} from '@/types/api';
 
 interface UseMarketDataReturn {
   snapshot: ParsedMarketSnapshot | null;
@@ -162,4 +169,119 @@ export function useHistoricalData(initialPageSize = 100): UseHistoricalDataRetur
   }, [fetchData]);
 
   return { data, loading, error, hasMore, loadMore, refresh };
+}
+
+// ============================================
+// Aggregated Market Data Hook (Backend-driven)
+// ============================================
+
+interface UseAggregatedDataParams {
+  timeRange: TimeRange;
+  granularity: Granularity;
+  source?: DataSource;
+}
+
+interface UseAggregatedDataReturn {
+  data: AggregatedMarketDataResponse | null;
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+}
+
+// Simple in-memory cache for session
+const aggregatedCache = new Map<string, { data: AggregatedMarketDataResponse; timestamp: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
+
+function getCacheKey(params: UseAggregatedDataParams): string {
+  return `${params.timeRange}:${params.granularity}:${params.source || 'p2p'}`;
+}
+
+export function useAggregatedData(params: UseAggregatedDataParams): UseAggregatedDataReturn {
+  const { timeRange, granularity, source = 'p2p' } = params;
+  
+  const [data, setData] = useState<AggregatedMarketDataResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Memoize cache key to prevent unnecessary fetches
+  const cacheKey = useMemo(() => getCacheKey(params), [timeRange, granularity, source]);
+
+  const fetchData = useCallback(async (skipCache = false) => {
+    // Check cache first
+    if (!skipCache) {
+      const cached = aggregatedCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        setData(cached.data);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+    }
+
+    // Cancel previous request if still in flight
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await marketDataApi.getAggregated({
+        time_range: timeRange,
+        granularity,
+        source,
+      });
+      
+      // Cache the result
+      aggregatedCache.set(cacheKey, { data: response, timestamp: Date.now() });
+      
+      setData(response);
+      setError(null);
+    } catch (err) {
+      // Ignore abort errors
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      
+      if (err instanceof ApiException) {
+        setError(err.detail as string);
+      } else {
+        setError('Error al obtener datos agregados');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [cacheKey, timeRange, granularity, source]);
+
+  // Fetch when params change
+  useEffect(() => {
+    fetchData();
+    
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchData]);
+
+  const refresh = useCallback(async () => {
+    await fetchData(true); // Skip cache on manual refresh
+  }, [fetchData]);
+
+  return { data, loading, error, refresh };
+}
+
+// Helper to format data source for display
+export function formatDataSource(source: string): string {
+  const sourceLabels: Record<string, string> = {
+    'p2p_scrape_json': 'P2P Scraper',
+    'external_ohlc_api': 'OHLC API',
+    'p2p': 'P2P',
+    'ohlc': 'OHLC',
+    'all': 'Todas las fuentes',
+  };
+  return sourceLabels[source] || source;
 }

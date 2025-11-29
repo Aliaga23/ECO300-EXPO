@@ -10,15 +10,18 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Spinner } from '@/components/ui/spinner'
-import { AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react'
-import type { CalculationStatusResponse } from '@/types/api'
+import { AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw, Calendar } from 'lucide-react'
+import type { CalculationStatusResponse, ParsedElasticityCalculation } from '@/types/api'
 
 interface CalculationStatusModalProps {
   open: boolean
   status: CalculationStatusResponse | null
   elapsedTime: number
   error: string | null
+  failed: boolean // True when calculation finished with FAILED status
+  failedCalculation: ParsedElasticityCalculation | null // The failed calculation with error_message
   onCancel: () => void
+  onRetry?: () => void // Called when user wants to try again
 }
 
 export function CalculationStatusModal({
@@ -26,9 +29,25 @@ export function CalculationStatusModal({
   status,
   elapsedTime,
   error,
+  failed,
+  failedCalculation,
   onCancel,
+  onRetry,
 }: CalculationStatusModalProps) {
   const getStatusConfig = () => {
+    // Handle FAILED status with calculation error message
+    if (failed && failedCalculation) {
+      return {
+        icon: AlertCircle,
+        iconColor: 'text-destructive',
+        title: 'Cálculo Fallido',
+        description: failedCalculation.errorMessage || 'No se pudo completar el cálculo con los datos disponibles.',
+        progress: 0,
+        showProgress: false,
+        isFailed: true,
+      }
+    }
+    
     if (error) {
       return {
         icon: XCircle,
@@ -37,6 +56,7 @@ export function CalculationStatusModal({
         description: error,
         progress: 0,
         showProgress: false,
+        isFailed: true,
       }
     }
 
@@ -49,6 +69,7 @@ export function CalculationStatusModal({
           description: 'Validando parámetros y preparando los datos...',
           progress: 10,
           showProgress: true,
+          isFailed: false,
         }
       case 'PROCESSING':
         return {
@@ -58,6 +79,7 @@ export function CalculationStatusModal({
           description: 'Procesando datos históricos y calculando elasticidad...',
           progress: 50,
           showProgress: true,
+          isFailed: false,
         }
       case 'COMPLETED':
         return {
@@ -67,15 +89,17 @@ export function CalculationStatusModal({
           description: 'Los resultados están listos para visualizar.',
           progress: 100,
           showProgress: false,
+          isFailed: false,
         }
       case 'FAILED':
         return {
           icon: AlertCircle,
           iconColor: 'text-destructive',
-          title: 'Error en el Cálculo',
-          description: 'Ocurrió un error durante el procesamiento.',
+          title: 'Cálculo Fallido',
+          description: 'No se pudo completar el cálculo.',
           progress: 0,
           showProgress: false,
+          isFailed: true,
         }
       default:
         return {
@@ -85,6 +109,7 @@ export function CalculationStatusModal({
           description: 'Conectando con el servidor de análisis...',
           progress: 5,
           showProgress: true,
+          isFailed: false,
         }
     }
   }
@@ -164,24 +189,60 @@ export function CalculationStatusModal({
             </p>
           )}
 
-          {elapsedTime > 30 && (
+          {elapsedTime > 30 && !config.isFailed && (
             <p className="text-xs text-yellow-500 text-center">
               El cálculo está tardando más de lo esperado. 
               Puede cancelar e intentar con un rango de fechas menor.
             </p>
           )}
+          
+          {/* FAILED status specific guidance */}
+          {config.isFailed && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <div className="flex items-start gap-2">
+                <Calendar className="h-4 w-4 text-destructive mt-0.5" />
+                <div className="text-xs text-muted-foreground">
+                  <p className="font-medium text-destructive mb-1">Sugerencia:</p>
+                  <p>
+                    Verifique que el rango de fechas seleccionado tenga datos OHLC disponibles.
+                    Intente con un período más reciente o más corto.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <DialogFooter>
-          {(config.showProgress || error) && (
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {config.isFailed ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                className="w-full sm:w-auto"
+              >
+                Cerrar
+              </Button>
+              {onRetry && (
+                <Button
+                  variant="default"
+                  onClick={onRetry}
+                  className="w-full sm:w-auto"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Ajustar y Reintentar
+                </Button>
+              )}
+            </>
+          ) : config.showProgress ? (
             <Button
-              variant={error ? 'default' : 'outline'}
+              variant="outline"
               onClick={onCancel}
               className="w-full"
             >
-              {error ? 'Cerrar' : 'Cancelar'}
+              Cancelar
             </Button>
-          )}
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

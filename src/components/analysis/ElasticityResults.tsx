@@ -17,6 +17,8 @@ import {
   Calendar,
   BarChart3,
   Target,
+  Database,
+  Sparkles,
 } from 'lucide-react'
 import type { ParsedElasticityCalculation } from '@/types/api'
 import { useState } from 'react'
@@ -79,7 +81,10 @@ export function ElasticityResults({
   const classificationConfig = getClassificationConfig()
   const ClassificationIcon = classificationConfig.icon
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return 'N/A'
+    }
     return date.toLocaleDateString('es-BO', {
       day: '2-digit',
       month: 'short',
@@ -87,8 +92,9 @@ export function ElasticityResults({
     })
   }
 
-  const formatDuration = (start: Date, end: Date | null) => {
-    if (!end) return 'N/A'
+  const formatDuration = (start: Date | null | undefined, end: Date | null | undefined) => {
+    if (!start || !end || !(start instanceof Date) || !(end instanceof Date)) return 'N/A'
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'N/A'
     const ms = end.getTime() - start.getTime()
     return `${(ms / 1000).toFixed(1)}s`
   }
@@ -118,6 +124,9 @@ export function ElasticityResults({
             {calculation.status}
           </Badge>
         </div>
+        
+        {/* Data Source Indicator */}
+        <DataSourceBadge metadata={calculation.calculationMetadata} />
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -257,6 +266,18 @@ export function ElasticityResults({
                     {formatDuration(calculation.createdAt, calculation.completedAt)}
                   </p>
                 </div>
+                {calculation.calculationMetadata?.data_source && (
+                  <div>
+                    <span className="text-muted-foreground">Fuente de Datos:</span>
+                    <p className="font-medium">
+                      {calculation.calculationMetadata.data_source.type === 'external_ohlc_api' 
+                        ? 'OHLC Externo' 
+                        : calculation.calculationMetadata.data_source.type}
+                      {calculation.calculationMetadata.data_source.timeframe && 
+                        ` (${calculation.calculationMetadata.data_source.timeframe})`}
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 pt-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -309,6 +330,38 @@ function StatCard({ icon: Icon, label, value, sublabel, valueColor }: StatCardPr
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={cn('text-lg font-bold', valueColor)}>{value}</p>
       <p className="text-xs text-muted-foreground">{sublabel}</p>
+    </div>
+  )
+}
+
+// Data source badge component - reads from calculation metadata
+interface DataSourceBadgeProps {
+  metadata: ParsedElasticityCalculation['calculationMetadata']
+}
+
+function DataSourceBadge({ metadata }: DataSourceBadgeProps) {
+  if (!metadata?.data_source) return null
+  
+  const { type, timeframe, quality_score } = metadata.data_source
+  
+  // Format display based on source type
+  const isExternalOHLC = type === 'external_ohlc_api'
+  const sourceLabel = isExternalOHLC ? 'OHLC Externo' : type
+  const timeframeLabel = timeframe || '1h'
+  const qualityLabel = quality_score && quality_score >= 0.9 ? 'Alta Calidad' : undefined
+  
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">
+        <Database className="h-3 w-3" />
+        <span>Fuente: {sourceLabel} ({timeframeLabel})</span>
+        {qualityLabel && (
+          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 ml-1">
+            <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+            {qualityLabel}
+          </Badge>
+        )}
+      </div>
     </div>
   )
 }

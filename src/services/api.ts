@@ -14,6 +14,9 @@ import type {
   APIError,
   ParsedMarketSnapshot,
   ParsedElasticityCalculation,
+  DataCoverage,
+  AggregatedMarketDataResponse,
+  AggregatedMarketDataRequest,
 } from '@/types/api';
 
 // ============================================
@@ -102,6 +105,7 @@ export function parseElasticityCalculation(calc: ElasticityCalculation): ParsedE
     errorMessage: calc.error_message,
     createdAt: new Date(calc.created_at),
     completedAt: calc.completed_at ? new Date(calc.completed_at) : null,
+    calculationMetadata: calc.calculation_metadata,
   };
 }
 
@@ -153,6 +157,65 @@ export const marketDataApi = {
       throw handleApiError(error as AxiosError<APIError>);
     }
   },
+
+  /**
+   * Get aggregated market data from backend
+   * This endpoint performs server-side aggregation for optimal performance
+   * Rate limit: 100 requests/hour
+   */
+  async getAggregated(params: AggregatedMarketDataRequest = {}): Promise<AggregatedMarketDataResponse> {
+    try {
+      const response = await apiClient.get<AggregatedMarketDataResponse>('/market-data/aggregated/', {
+        params: {
+          time_range: params.time_range,
+          granularity: params.granularity,
+          source: params.source,
+          start_date: params.start_date,
+          end_date: params.end_date,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error as AxiosError<APIError>);
+    }
+  },
+
+  /**
+   * Get data coverage information (min/max dates available)
+   * This helps the form constrain date selection to valid ranges
+   * Rate limit: 100 requests/hour
+   */
+  async getDataCoverage(): Promise<DataCoverage | null> {
+    try {
+      // Try to get coverage from a dedicated endpoint if available
+      const response = await apiClient.get<DataCoverage>('/market-data/coverage/');
+      return response.data;
+    } catch {
+      // If endpoint doesn't exist, try to infer from historical data
+      try {
+        const historical = await this.getHistorical(1, 1);
+        if (historical.count > 0 && historical.results.length > 0) {
+          // Get first page to find latest, and last page to find earliest
+          const lastPage = Math.ceil(historical.count / 50);
+          const [firstPageData, lastPageData] = await Promise.all([
+            this.getHistorical(1, 50),
+            this.getHistorical(lastPage, 50),
+          ]);
+          const allSnapshots = [...firstPageData.results, ...lastPageData.results];
+          const dates = allSnapshots.map(s => s.timestamp);
+          return {
+            min_date: new Date(Math.min(...dates.map(d => d.getTime()))).toISOString(),
+            max_date: new Date(Math.max(...dates.map(d => d.getTime()))).toISOString(),
+            total_snapshots: historical.count,
+            source: 'external_ohlc_api',
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    }
+  },
 };
 
 // ============================================
@@ -166,9 +229,15 @@ export const elasticityApi = {
    */
   async create(request: CalculationRequest): Promise<ElasticityCalculation> {
     try {
+      console.log('API Client - Sending request to /elasticity/calculate/:', request);
       const response = await apiClient.post<ElasticityCalculation>('/elasticity/calculate/', request);
+      console.log('API Client - Response:', response.data);
       return response.data;
     } catch (error) {
+      console.error('API Client - Error:', error);
+      if (error instanceof Error && 'response' in error) {
+        console.error('API Client - Error response:', (error as any).response?.data);
+      }
       throw handleApiError(error as AxiosError<APIError>);
     }
   },
@@ -297,10 +366,15 @@ export interface PollOptions {
   onStatusChange?: (status: CalculationStatusResponse) => void;
 }
 
+export interface PollResult {
+  calculation: ParsedElasticityCalculation;
+  failed: boolean;
+}
+
 export async function pollCalculationStatus(
   calculationId: string,
   options: PollOptions = {}
-): Promise<ParsedElasticityCalculation> {
+): Promise<PollResult> {
   const { intervalMs = 2000, maxAttempts = 30, onStatusChange } = options;
   let attempts = 0;
 
@@ -309,12 +383,15 @@ export async function pollCalculationStatus(
     onStatusChange?.(status);
 
     if (status.is_complete) {
-      return elasticityApi.getResults(calculationId);
+      const calculation = await elasticityApi.getResults(calculationId);
+      return { calculation, failed: false };
     }
 
     if (status.has_error) {
-      const results = await elasticityApi.getResults(calculationId);
-      throw new ApiException(400, 'Calculation Failed', results.errorMessage || 'Unknown error');
+      // Return the FAILED calculation with error_message instead of throwing
+      // This allows the UI to display the error message from the backend
+      const calculation = await elasticityApi.getResults(calculationId);
+      return { calculation, failed: true };
     }
 
     attempts++;

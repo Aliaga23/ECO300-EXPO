@@ -15,6 +15,8 @@ import {
   Eye,
   History,
   Filter,
+  Database,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -143,6 +145,7 @@ export function CalculationHistoryTable({ onViewCalculation }: CalculationHistor
                     <th className="text-left py-3 px-2 font-medium">Método</th>
                     <th className="text-left py-3 px-2 font-medium">Coeficiente</th>
                     <th className="text-left py-3 px-2 font-medium">Clasificación</th>
+                    <th className="text-left py-3 px-2 font-medium">Fuente</th>
                     <th className="text-left py-3 px-2 font-medium">Estado</th>
                     <th className="text-right py-3 px-2 font-medium">Acciones</th>
                   </tr>
@@ -200,6 +203,11 @@ interface RowProps {
 function HistoryRow({ calculation, onView, formatDate, getStatusConfig }: RowProps) {
   const statusConfig = getStatusConfig(calculation.status)
   const StatusIcon = statusConfig.icon
+  
+  // Extract data source info from calculation_metadata
+  const dataSourceType = calculation.calculation_metadata?.data_source?.type
+  const isExternalOHLC = dataSourceType === 'external_ohlc_api'
+  const dataPointsUsed = calculation.data_points_used
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/50 transition-colors">
@@ -229,6 +237,26 @@ function HistoryRow({ calculation, onView, formatDate, getStatusConfig }: RowPro
         ) : '—'}
       </td>
       <td className="py-3 px-2">
+        {dataSourceType ? (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1 text-xs">
+              <Database className="h-3 w-3 text-primary" />
+              <span className={isExternalOHLC ? 'text-primary' : ''}>
+                {isExternalOHLC ? 'OHLC' : dataSourceType}
+              </span>
+            </div>
+            {dataPointsUsed != null && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <BarChart3 className="h-3 w-3" />
+                <span>{dataPointsUsed} pts</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
+      </td>
+      <td className="py-3 px-2">
         <div className={cn('inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs', statusConfig.bgColor)}>
           <StatusIcon className={cn('h-3 w-3', statusConfig.color, statusConfig.animate && 'animate-spin')} />
           <span className={statusConfig.color}>{calculation.status}</span>
@@ -251,6 +279,11 @@ function HistoryRow({ calculation, onView, formatDate, getStatusConfig }: RowPro
 function HistoryCard({ calculation, onView, formatDate, getStatusConfig }: RowProps) {
   const statusConfig = getStatusConfig(calculation.status)
   const StatusIcon = statusConfig.icon
+  
+  // Extract data source info from calculation_metadata
+  const dataSourceType = calculation.calculation_metadata?.data_source?.type
+  const isExternalOHLC = dataSourceType === 'external_ohlc_api'
+  const dataPointsUsed = calculation.data_points_used
 
   return (
     <div className="border rounded-lg p-4 space-y-3">
@@ -286,6 +319,24 @@ function HistoryCard({ calculation, onView, formatDate, getStatusConfig }: RowPr
           }
         </span>
       </div>
+      
+      {/* Data Source Info */}
+      {dataSourceType && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Database className="h-3 w-3 text-primary" />
+            <span className={isExternalOHLC ? 'text-primary' : ''}>
+              {isExternalOHLC ? 'OHLC Externo' : dataSourceType}
+            </span>
+          </div>
+          {dataPointsUsed != null && (
+            <div className="flex items-center gap-1">
+              <BarChart3 className="h-3 w-3" />
+              <span>{dataPointsUsed} puntos</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <Button
         variant="outline"

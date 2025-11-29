@@ -18,6 +18,7 @@ export default function NewAnalysisPage() {
     loading,
     polling,
     error,
+    failed,
     elapsedTime,
     startCalculation,
     cancelPolling,
@@ -63,6 +64,18 @@ export default function NewAnalysisPage() {
     resetCalculation()
     resetInterpretation()
   }
+  
+  // Handle retry after a failed calculation - reset and show form
+  const handleRetry = () => {
+    resetCalculation()
+    resetInterpretation()
+  }
+  
+  // Get the failed message from the calculation if it failed
+  const failedMessage = failed && calculation?.errorMessage ? calculation.errorMessage : null
+  
+  // Determine if we should show the form (no successful calculation yet)
+  const showForm = !calculation || failed
 
   return (
     <DashboardLayout>
@@ -97,12 +110,14 @@ export default function NewAnalysisPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Form or Results */}
           <div className="space-y-6">
-            {!calculation ? (
+            {showForm ? (
               <ElasticityForm
                 onSubmit={handleSubmit}
                 loading={loading || polling}
                 disabled={polling}
                 rateLimitRemaining={rateLimitRemaining}
+                failedMessage={failedMessage}
+                onClearError={resetCalculation}
               />
             ) : (
               <ElasticityResults
@@ -117,7 +132,7 @@ export default function NewAnalysisPage() {
 
           {/* Right Column - Interpretation or Context */}
           <div className="space-y-6">
-            {calculation ? (
+            {calculation && !failed ? (
               <InterpretationPanel
                 interpretation={interpretation}
                 loading={interpretationLoading}
@@ -135,11 +150,14 @@ export default function NewAnalysisPage() {
 
         {/* Calculation Status Modal */}
         <CalculationStatusModal
-          open={polling}
+          open={polling || failed}
           status={status}
           elapsedTime={elapsedTime}
           error={error}
+          failed={failed}
+          failedCalculation={failed ? calculation : null}
           onCancel={handleCancelPolling}
+          onRetry={handleRetry}
         />
       </div>
     </DashboardLayout>
