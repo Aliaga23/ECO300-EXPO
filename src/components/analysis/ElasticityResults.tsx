@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { AIUnlockDialog } from '@/components/ui/ai-unlock-dialog'
 import {
   Activity,
   CheckCircle2,
@@ -22,9 +23,12 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
+  Lock,
+  Unlock,
 } from 'lucide-react'
 import type { ParsedElasticityCalculation } from '@/types/api'
 import { useState } from 'react'
+import { useAIUnlock } from '@/hooks'
 import { cn } from '@/lib/utils'
 
 interface ElasticityResultsProps {
@@ -43,6 +47,8 @@ export function ElasticityResults({
   reportLoading = false,
 }: ElasticityResultsProps) {
   const [showDetails, setShowDetails] = useState(false)
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
+  const { isUnlocked, isLoading: unlockLoading, unlock, lock } = useAIUnlock()
 
   // Use backend classification_label if available, fallback to local mapping
   const getClassificationConfig = () => {
@@ -105,6 +111,29 @@ export function ElasticityResults({
     return `${(ms / 1000).toFixed(1)}s`
   }
 
+  // Handle AI interpretation button click
+  const handleAIButtonClick = () => {
+    if (!isUnlocked) {
+      setShowUnlockDialog(true)
+    } else {
+      onGenerateInterpretation()
+    }
+  }
+
+  // Handle unlock dialog
+  const handleUnlock = (password: string): boolean => {
+    const success = unlock(password)
+    if (success) {
+      setShowUnlockDialog(false)
+      onGenerateInterpretation()
+    }
+    return success
+  }
+
+  const handleUnlockCancel = () => {
+    setShowUnlockDialog(false)
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -133,6 +162,32 @@ export function ElasticityResults({
         
         {/* Data Source Indicator */}
         <DataSourceBadge metadata={calculation.calculationMetadata} />
+        
+        {/* AI Unlock Status Indicator */}
+        {!unlockLoading && (
+          <div className="flex items-center gap-2 mt-2">
+            {isUnlocked ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success text-xs cursor-pointer hover:bg-success/20 transition-colors" onClick={lock}>
+                      <Unlock className="h-3 w-3" />
+                      <span>IA Desbloqueada</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>IA desbloqueada - Clic para bloquear</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-muted-foreground text-xs">
+                <Lock className="h-3 w-3" />
+                <span>IA Requiere Autorización</span>
+              </div>
+            )}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -351,11 +406,14 @@ export function ElasticityResults({
           <Button
             variant="secondary"
             className="flex-1"
-            onClick={onGenerateInterpretation}
-            disabled={interpretationLoading}
+            onClick={handleAIButtonClick}
+            disabled={interpretationLoading || unlockLoading}
           >
             <Brain className="mr-2 h-4 w-4" />
-            {interpretationLoading ? 'Generando...' : 'Generar Interpretación IA'}
+            {!isUnlocked && <Lock className="mr-1 h-3 w-3" />}
+            {interpretationLoading ? 'Generando...' : 
+             !isUnlocked ? 'Desbloquear IA' : 
+             'Generar Interpretación IA'}
           </Button>
           <Button
             variant="default"
@@ -367,6 +425,13 @@ export function ElasticityResults({
             {reportLoading ? 'Descargando...' : 'Descargar Reporte PDF'}
           </Button>
         </div>
+
+        {/* AI Unlock Dialog */}
+        <AIUnlockDialog
+          open={showUnlockDialog}
+          onUnlock={handleUnlock}
+          onCancel={handleUnlockCancel}
+        />
       </CardContent>
     </Card>
   )
