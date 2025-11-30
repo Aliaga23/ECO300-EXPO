@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { AIUnlockDialog } from '@/components/ui/ai-unlock-dialog'
+import { AdvancedFeaturesUnlockDialog } from '@/components/ui/ai-unlock-dialog'
 import {
   Activity,
   CheckCircle2,
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import type { ParsedElasticityCalculation } from '@/types/api'
 import { useState } from 'react'
-import { useAIUnlock } from '@/hooks'
+import { useAdvancedFeaturesUnlock } from '@/hooks'
 import { cn } from '@/lib/utils'
 
 interface ElasticityResultsProps {
@@ -48,7 +48,7 @@ export function ElasticityResults({
 }: ElasticityResultsProps) {
   const [showDetails, setShowDetails] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
-  const { isUnlocked, isLoading: unlockLoading, unlock, lock } = useAIUnlock()
+  const { isUnlocked, isLoading: unlockLoading, unlock, lock } = useAdvancedFeaturesUnlock()
 
   // Use backend classification_label if available, fallback to local mapping
   const getClassificationConfig = () => {
@@ -163,7 +163,7 @@ export function ElasticityResults({
         {/* Data Source Indicator */}
         <DataSourceBadge metadata={calculation.calculationMetadata} />
         
-        {/* AI Unlock Status Indicator */}
+        {/* Advanced Features Unlock Status Indicator */}
         {!unlockLoading && (
           <div className="flex items-center gap-2 mt-2">
             {isUnlocked ? (
@@ -172,18 +172,18 @@ export function ElasticityResults({
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success text-xs cursor-pointer hover:bg-success/20 transition-colors" onClick={lock}>
                       <Unlock className="h-3 w-3" />
-                      <span>IA Desbloqueada</span>
+                      <span>Funcionalidades Avanzadas Activas</span>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>IA desbloqueada - Clic para bloquear</p>
+                    <p>Funcionalidades avanzadas desbloqueadas - Clic para bloquear</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-muted-foreground text-xs">
                 <Lock className="h-3 w-3" />
-                <span>IA Requiere Autorización</span>
+                <span>Funcionalidades Avanzadas Requieren Autorización</span>
               </div>
             )}
           </div>
@@ -426,8 +426,8 @@ export function ElasticityResults({
           </Button>
         </div>
 
-        {/* AI Unlock Dialog */}
-        <AIUnlockDialog
+        {/* Advanced Features Unlock Dialog */}
+        <AdvancedFeaturesUnlockDialog
           open={showUnlockDialog}
           onUnlock={handleUnlock}
           onCancel={handleUnlockCancel}

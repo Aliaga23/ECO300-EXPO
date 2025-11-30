@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertCircle, Brain, Calculator } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,13 +12,13 @@ import { Button } from './button';
 import { Input } from './input';
 import { cn } from '@/lib/utils';
 
-interface AIUnlockDialogProps {
+interface AdvancedFeaturesUnlockDialogProps {
   open: boolean;
   onUnlock: (password: string) => boolean;
   onCancel: () => void;
 }
 
-export function AIUnlockDialog({ open, onUnlock, onCancel }: AIUnlockDialogProps) {
+export function AdvancedFeaturesUnlockDialog({ open, onUnlock, onCancel }: AdvancedFeaturesUnlockDialogProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,13 +95,34 @@ export function AIUnlockDialog({ open, onUnlock, onCancel }: AIUnlockDialogProps
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Lock className="h-5 w-5 text-primary" />
             </div>
-            <DialogTitle>Acceso a Interpretación IA</DialogTitle>
+            <DialogTitle>Acceso a Funcionalidades Avanzadas</DialogTitle>
           </div>
           <DialogDescription>
-            Esta funcionalidad requiere autorización. Ingrese la contraseña para desbloquear 
-            el análisis con inteligencia artificial.
+            Esta funcionalidad requiere autorización. Las siguientes características estarán disponibles:
           </DialogDescription>
         </DialogHeader>
+
+        {/* Features List */}
+        <div className="space-y-3 py-2">
+          <div className="flex items-center gap-3 text-sm">
+            <div className="w-8 h-8 rounded-md bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+              <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="font-medium">Cálculo de Elasticidad de Precio</p>
+              <p className="text-muted-foreground">Análisis avanzado de demanda</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-sm">
+            <div className="w-8 h-8 rounded-md bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
+              <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="font-medium">Interpretación con Inteligencia Artificial</p>
+              <p className="text-muted-foreground">Análisis con IA de resultados</p>
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -173,3 +194,6 @@ export function AIUnlockDialog({ open, onUnlock, onCancel }: AIUnlockDialogProps
     </Dialog>
   );
 }
+
+// Export the old name for backward compatibility
+export const AIUnlockDialog = AdvancedFeaturesUnlockDialog;

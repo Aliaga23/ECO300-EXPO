@@ -7,8 +7,11 @@ export { useElasticityCalculation, useCalculationHistory, useCalculationResult, 
 // AI Interpretation Hook
 export { useInterpretation } from './useInterpretation';
 
-// AI Unlock Hook
-export { useAIUnlock } from './useAIUnlock';
+// Advanced Features Unlock Hook
+export { useAdvancedFeaturesUnlock } from './useAdvancedFeaturesUnlock';
+
+// AI Unlock Hook (deprecated - use useAdvancedFeaturesUnlock instead)
+export { useAdvancedFeaturesUnlock as useAIUnlock } from './useAdvancedFeaturesUnlock';
 
 // Simulator Hook
 export { useSimulator } from './useSimulator';

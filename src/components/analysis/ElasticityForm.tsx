@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectOption } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Calculator, AlertCircle, Clock, Database, Info } from 'lucide-react'
-import { useDataCoverage } from '@/hooks'
+import { AdvancedFeaturesUnlockDialog } from '@/components/ui/ai-unlock-dialog'
+import { Calculator, AlertCircle, Clock, Database, Info, Lock } from 'lucide-react'
+import { useDataCoverage, useAdvancedFeaturesUnlock } from '@/hooks'
 import type { CalculationMethod, WindowSize, CalculationRequest } from '@/types/api'
 
 interface ElasticityFormProps {
@@ -28,6 +29,8 @@ export function ElasticityForm({
   onClearError,
 }: ElasticityFormProps) {
   const { coverage, loading: coverageLoading } = useDataCoverage()
+  const { isUnlocked, isLoading: unlockLoading, unlock } = useAdvancedFeaturesUnlock()
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
 
   // Compute date constraints from coverage data
   const { minDate, maxDate, defaultStartDate, defaultEndDate } = useMemo(() => {
@@ -174,8 +177,32 @@ export function ElasticityForm({
     return Object.keys(newErrors).length === 0
   }
 
+  // Handle unlock dialog
+  const handleUnlock = (password: string): boolean => {
+    const success = unlock(password)
+    if (success) {
+      setShowUnlockDialog(false)
+      // Continue with calculation after successful unlock
+      setTimeout(() => {
+        const form = document.getElementById('elasticity-form') as HTMLFormElement
+        form?.requestSubmit()
+      }, 100)
+    }
+    return success
+  }
+
+  const handleUnlockCancel = () => {
+    setShowUnlockDialog(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check if advanced features are unlocked
+    if (!isUnlocked) {
+      setShowUnlockDialog(true)
+      return
+    }
     
     // Clear previous error when submitting
     if (onClearError) onClearError()
@@ -278,7 +305,16 @@ export function ElasticityForm({
         )}
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Lock Status Banner */}
+        {!unlockLoading && !isUnlocked && (
+          <Alert className="mb-6">
+            <Lock className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Esta funcionalidad requiere autorización.</strong> Haz clic en el botón "Desbloquear Cálculo" para acceder a cálculos avanzados e interpretación con IA.
+            </AlertDescription>
+          </Alert>
+        )}
+        <form id="elasticity-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Date Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -290,7 +326,7 @@ export function ElasticityForm({
                 onChange={(e) => setStartDate(e.target.value)}
                 min={minDate}
                 max={maxDate}
-                disabled={loading || disabled || coverageLoading}
+                disabled={loading || disabled || !isUnlocked}
               />
               {errors.startDate && (
                 <p className="text-xs text-destructive">{errors.startDate}</p>
@@ -305,7 +341,7 @@ export function ElasticityForm({
                 onChange={(e) => setEndDate(e.target.value)}
                 min={minDate}
                 max={maxDate}
-                disabled={loading || disabled || coverageLoading}
+                disabled={loading || disabled || !isUnlocked}
               />
               {errors.endDate && (
                 <p className="text-xs text-destructive">{errors.endDate}</p>
@@ -321,7 +357,7 @@ export function ElasticityForm({
                 id="method"
                 value={method}
                 onChange={(e) => setMethod(e.target.value as CalculationMethod)}
-                disabled={loading || disabled}
+                disabled={loading || disabled || !isUnlocked}
               >
                 <SelectOption value="midpoint">Punto Medio (Midpoint)</SelectOption>
                 <SelectOption value="regression">Regresión Log-Log</SelectOption>
@@ -339,7 +375,7 @@ export function ElasticityForm({
                 id="windowSize"
                 value={windowSize}
                 onChange={(e) => setWindowSize(e.target.value as WindowSize)}
-                disabled={loading || disabled}
+                disabled={loading || disabled || !isUnlocked}
               >
                 <SelectOption value="hourly">Por Hora</SelectOption>
                 <SelectOption value="daily">Por Día</SelectOption>
@@ -396,17 +432,22 @@ export function ElasticityForm({
             size="lg"
             disabled={loading || disabled || isRateLimited}
           >
-            {loading ? (
-              <>
-                <Clock className="mr-2 h-4 w-4 animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                <Calculator className="mr-2 h-4 w-4" />
-                Calcular Elasticidad
-              </>
-            )}
+              {!isUnlocked ? (
+                <>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Desbloquear Cálculo
+                </>
+              ) : loading ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <Calculator className="mr-2 h-4 w-4" />
+                  Calcular Elasticidad
+                </>
+              )}
           </Button>
 
           {/* Help Text */}
@@ -417,6 +458,13 @@ export function ElasticityForm({
             }
           </p>
         </form>
+
+        {/* Advanced Features Unlock Dialog */}
+        <AdvancedFeaturesUnlockDialog
+          open={showUnlockDialog}
+          onUnlock={handleUnlock}
+          onCancel={handleUnlockCancel}
+        />
       </CardContent>
     </Card>
   )
