@@ -201,10 +201,10 @@ export function MarketDataCard() {
 
         {/* Data Quality Indicator */}
         <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span className="text-sm text-muted-foreground">Calidad de Datos</span>
             <div className="flex items-center gap-2">
-              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+              <div className="w-20 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn(
                     'h-full rounded-full transition-all',
@@ -219,6 +219,7 @@ export function MarketDataCard() {
                   displayValues.quality >= 0.8 ? 'success' :
                   displayValues.quality >= 0.5 ? 'warning' : 'destructive'
                 }
+                className="text-xs"
               >
                 {displayValues.qualityPercent}%
               </Badge>

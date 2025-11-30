@@ -89,7 +89,7 @@ export function AdvancedFeaturesUnlockDialog({ open, onUnlock, onCancel }: Advan
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-[95vw] sm:max-w-md mx-4">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

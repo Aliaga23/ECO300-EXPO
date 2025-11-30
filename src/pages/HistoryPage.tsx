@@ -63,14 +63,16 @@ export default function HistoryPage() {
 
         {/* Tabs for different history views */}
         <Tabs defaultValue="calculations">
-          <TabsList>
-            <TabsTrigger value="calculations">
-              <History className="h-4 w-4 mr-2" />
-              Cálculos
+          <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex">
+            <TabsTrigger value="calculations" className="flex items-center gap-2">
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">Cálculos</span>
+              <span className="sm:hidden">Cálc.</span>
             </TabsTrigger>
-            <TabsTrigger value="market">
-              <LineChart className="h-4 w-4 mr-2" />
-              Mercado
+            <TabsTrigger value="market" className="flex items-center gap-2">
+              <LineChart className="h-4 w-4" />
+              <span className="hidden sm:inline">Mercado</span>
+              <span className="sm:hidden">Merc.</span>
             </TabsTrigger>
           </TabsList>
 
@@ -85,7 +87,7 @@ export default function HistoryPage() {
 
         {/* Calculation Detail Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>Detalle del Cálculo</DialogTitle>
             </DialogHeader>

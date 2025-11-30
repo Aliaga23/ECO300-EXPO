@@ -169,19 +169,21 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               onClick={handleCalculate}
               disabled={loading}
-              className="flex-1"
+              className="w-full sm:flex-1 h-12 sm:h-11"
             >
               {loading ? 'Calculando...' : 'Calcular Elasticidad'}
             </Button>
             <Button
               variant="outline"
               onClick={handleReset}
+              className="w-full sm:w-auto h-12 sm:h-11"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4 mr-2 sm:mr-0" />
+              <span className="sm:hidden">Resetear</span>
             </Button>
           </div>
 
