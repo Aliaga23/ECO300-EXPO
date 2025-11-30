@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useMarketData } from '@/hooks'
 import {
   DollarSign,
@@ -11,37 +12,9 @@ import {
   Activity,
   BarChart3,
   Clock,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-// Local storage key for persisting last price
-const LAST_PRICE_KEY = 'elasticbot_last_market_price'
-
-interface StoredPrice {
-  price: number
-  timestamp: number
-}
-
-function getStoredPrice(): StoredPrice | null {
-  try {
-    const stored = localStorage.getItem(LAST_PRICE_KEY)
-    if (stored) return JSON.parse(stored)
-  } catch {
-    // Ignore parse errors
-  }
-  return null
-}
-
-function setStoredPrice(price: number): void {
-  try {
-    localStorage.setItem(LAST_PRICE_KEY, JSON.stringify({
-      price,
-      timestamp: Date.now(),
-    }))
-  } catch {
-    // Ignore storage errors
-  }
-}
 
 // Format relative time from timestamp
 function formatTimeAgo(timestamp: Date): string {
@@ -58,32 +31,6 @@ export function MarketDataCard() {
   
   // State for live "time ago" updates
   const [timeAgo, setTimeAgo] = useState<string>('Actualizando...')
-  
-  // State for previous price (from localStorage)
-  const [previousPrice, setPreviousPrice] = useState<number | null>(null)
-
-  // Load previous price from localStorage on mount
-  useEffect(() => {
-    const stored = getStoredPrice()
-    if (stored) {
-      setPreviousPrice(stored.price)
-    }
-  }, [])
-
-  // Update localStorage when we get a new snapshot
-  useEffect(() => {
-    if (snapshot) {
-      // Only update stored price if it's different (new data)
-      const stored = getStoredPrice()
-      if (!stored || stored.price !== snapshot.averageSellPrice) {
-        // Save current as "previous" for next comparison
-        if (stored) {
-          setPreviousPrice(stored.price)
-        }
-        setStoredPrice(snapshot.averageSellPrice)
-      }
-    }
-  }, [snapshot?.averageSellPrice])
 
   // Update "time ago" every 30 seconds
   useEffect(() => {
@@ -100,12 +47,10 @@ export function MarketDataCard() {
     return () => clearInterval(interval)
   }, [snapshot?.timestamp])
 
-  // Memoized price change calculation
-  const priceChange = useMemo(() => {
-    if (!snapshot || previousPrice === null || previousPrice === 0) return null
-    if (previousPrice === snapshot.averageSellPrice) return null // No change
-    return ((snapshot.averageSellPrice - previousPrice) / previousPrice) * 100
-  }, [snapshot?.averageSellPrice, previousPrice])
+  // Use backend-computed price change - NO local calculations
+  const priceChange = snapshot?.priceChangePercentage
+  const priceDirection = snapshot?.priceChangeDirection
+  const showPriceChange = priceChange !== null && priceChange !== undefined && !snapshot?.isFirstSnapshot
 
   // Memoized volume formatter
   const formatVolume = useCallback((volume: number) => {
@@ -128,6 +73,17 @@ export function MarketDataCard() {
       activeTraders: snapshot.numActiveTraders,
     }
   }, [snapshot, formatVolume])
+
+  // Get badge variant based on backend direction
+  const getPriceChangeBadgeVariant = () => {
+    if (!priceDirection || priceDirection === 'neutral') return 'secondary'
+    return priceDirection === 'up' ? 'success' : 'destructive'
+  }
+
+  // Get icon based on backend direction  
+  const PriceChangeIcon = priceDirection === 'up' ? TrendingUp 
+    : priceDirection === 'down' ? TrendingDown 
+    : Minus
 
   if (loading) {
     return <MarketDataSkeleton />
@@ -170,27 +126,42 @@ export function MarketDataCard() {
             </div>
           </div>
           <div className="flex flex-col items-end">
-            {priceChange !== null ? (
+            {/* Price Change - using backend computed values directly */}
+            {showPriceChange && priceChange !== null && priceChange !== undefined ? (
               <Badge
-                variant={priceChange >= 0 ? 'success' : 'destructive'}
+                variant={getPriceChangeBadgeVariant()}
                 className="flex items-center gap-1 text-sm px-3 py-1"
               >
-                {priceChange >= 0 ? (
-                  <TrendingUp className="h-4 w-4" />
-                ) : (
-                  <TrendingDown className="h-4 w-4" />
-                )}
+                <PriceChangeIcon className="h-4 w-4" />
                 {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
               </Badge>
             ) : (
               <Badge variant="secondary" className="flex items-center gap-1 text-sm px-3 py-1">
                 <Minus className="h-4 w-4" />
-                
+                Sin cambios
               </Badge>
             )}
-            <span className="text-xs text-muted-foreground mt-1">
-              {priceChange !== null ? 'vs. última lectura' : 'Sin cambios'}
-            </span>
+            {/* Time gap warning from backend */}
+            {snapshot.timeGapWarning && snapshot.timeGapMinutes !== null && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-warning flex items-center gap-1 mt-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Hace {snapshot.timeGapMinutes}m
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Última actualización hace {snapshot.timeGapMinutes} minutos</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {!snapshot.timeGapWarning && (
+              <span className="text-xs text-muted-foreground mt-1">
+                {showPriceChange ? 'vs. última lectura' : 'Primera lectura'}
+              </span>
+            )}
           </div>
         </div>
 

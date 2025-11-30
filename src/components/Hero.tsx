@@ -8,10 +8,10 @@ import { useMarketData } from "@/hooks"
 export function Hero() {
   const { snapshot, loading } = useMarketData(60000) // Refresh every 60s on landing
 
-  // Calculate premium over official rate (assuming 6.96 BOB)
-  const officialRate = 6.96
+  // Use backend-computed values - no local calculations
   const currentPrice = snapshot?.averageSellPrice ?? 0
-  const premium = currentPrice > 0 ? ((currentPrice - officialRate) / officialRate * 100).toFixed(1) : '0'
+  // Use market premium from backend if available
+  const premium = snapshot?.marketPremiumPercentage ?? null
 
   return (
     <section className="relative pt-24 pb-4 md:pt-32 md:pb-6 lg:pt-40 lg:pb-8 overflow-hidden">
@@ -85,7 +85,7 @@ export function Hero() {
                   <Skeleton className="h-8 w-16 mb-1" />
                 ) : (
                   <div className="text-2xl md:text-3xl font-bold text-chart-1">
-                    +{premium}%
+                    {premium !== null ? `+${premium.toFixed(1)}%` : '—'}
                   </div>
                 )}
                 <div className="text-xs md:text-sm text-muted-foreground">Prima vs BCB</div>

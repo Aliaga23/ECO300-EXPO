@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { marketDataApi, ApiException } from '@/services/api';
 import type { 
+  ParsedLatestMarketData, 
   ParsedMarketSnapshot, 
   MacroeconomicIndicator,
   AggregatedMarketDataResponse,
@@ -10,8 +11,8 @@ import type {
 } from '@/types/api';
 
 interface UseMarketDataReturn {
-  snapshot: ParsedMarketSnapshot | null;
-  previousSnapshot: ParsedMarketSnapshot | null;
+  /** Latest market snapshot with all computed fields from backend */
+  snapshot: ParsedLatestMarketData | null;
   loading: boolean;
   error: string | null;
   lastUpdated: Date | null;
@@ -19,8 +20,7 @@ interface UseMarketDataReturn {
 }
 
 export function useMarketData(autoRefreshMs = 30000): UseMarketDataReturn {
-  const [snapshot, setSnapshot] = useState<ParsedMarketSnapshot | null>(null);
-  const [previousSnapshot, setPreviousSnapshot] = useState<ParsedMarketSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<ParsedLatestMarketData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -29,7 +29,6 @@ export function useMarketData(autoRefreshMs = 30000): UseMarketDataReturn {
   const fetchData = useCallback(async () => {
     try {
       const data = await marketDataApi.getLatest();
-      setPreviousSnapshot(snapshot);
       setSnapshot(data);
       setLastUpdated(new Date());
       setError(null);
@@ -42,7 +41,7 @@ export function useMarketData(autoRefreshMs = 30000): UseMarketDataReturn {
     } finally {
       setLoading(false);
     }
-  }, [snapshot]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -63,7 +62,7 @@ export function useMarketData(autoRefreshMs = 30000): UseMarketDataReturn {
     await fetchData();
   }, [fetchData]);
 
-  return { snapshot, previousSnapshot, loading, error, lastUpdated, refresh };
+  return { snapshot, loading, error, lastUpdated, refresh };
 }
 
 interface UseBCBRateReturn {

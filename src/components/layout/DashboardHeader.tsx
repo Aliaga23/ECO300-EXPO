@@ -2,21 +2,33 @@ import { useMarketData } from '@/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export function DashboardHeader() {
-  const { snapshot, previousSnapshot, loading, lastUpdated, refresh } = useMarketData()
+  const { snapshot, loading, lastUpdated, refresh } = useMarketData()
 
-  const priceChange = snapshot && previousSnapshot
-    ? ((snapshot.averageSellPrice - previousSnapshot.averageSellPrice) / previousSnapshot.averageSellPrice) * 100
-    : 0
+  // Use backend-computed price change - no local calculations
+  const priceChange = snapshot?.priceChangePercentage
+  const priceDirection = snapshot?.priceChangeDirection
+  const showPriceChange = priceChange !== null && !snapshot?.isFirstSnapshot
 
   const formatTime = (date: Date | null) => {
     if (!date) return 'Actualizando...'
     return date.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })
   }
+
+  // Get badge variant based on backend direction
+  const getPriceChangeBadgeVariant = () => {
+    if (!priceDirection || priceDirection === 'neutral') return 'secondary'
+    return priceDirection === 'up' ? 'success' : 'destructive'
+  }
+
+  // Get icon based on backend direction
+  const PriceChangeIcon = priceDirection === 'up' ? TrendingUp 
+    : priceDirection === 'down' ? TrendingDown 
+    : Minus
 
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -44,18 +56,23 @@ export function DashboardHeader() {
                   {snapshot.averageSellPrice.toFixed(2)}
                 </span>
                 
-                {/* Price Change Indicator */}
-                <Badge 
-                  variant={priceChange >= 0 ? 'success' : 'destructive'}
-                  className="flex items-center gap-1"
-                >
-                  {priceChange >= 0 ? (
-                    <TrendingUp className="h-3 w-3" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3" />
-                  )}
-                  <span>{priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%</span>
-                </Badge>
+                {/* Price Change Indicator - using backend values directly */}
+                {showPriceChange && priceChange !== null && priceChange !== undefined ? (
+                  <Badge 
+                    variant={getPriceChangeBadgeVariant()}
+                    className="flex items-center gap-1"
+                  >
+                    <PriceChangeIcon className="h-3 w-3" />
+                    <span>
+                      {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+                    </span>
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Minus className="h-3 w-3" />
+                    <span>—</span>
+                  </Badge>
+                )}
               </div>
 
               {/* Data Quality */}

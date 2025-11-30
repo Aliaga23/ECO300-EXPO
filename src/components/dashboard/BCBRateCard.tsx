@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { useBCBRate, useMarketData } from '@/hooks'
-import { Landmark, Info, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Landmark, Info, TrendingUp, AlertTriangle, Clock } from 'lucide-react'
 
 export function BCBRateCard() {
   const { indicator, officialRate, loading: bcbLoading, error: bcbError } = useBCBRate()
@@ -36,9 +37,14 @@ export function BCBRateCard() {
     )
   }
 
-  // Calculate premium
+  // Use backend-computed premium - NO local calculations
   const p2pRate = snapshot?.averageSellPrice || 0
-  const premium = officialRate > 0 ? ((p2pRate - officialRate) / officialRate) * 100 : 0
+  const premium = snapshot?.marketPremiumPercentage
+  const bcbRateFromMarketData = snapshot?.bcbOfficialRate
+  const bcbRateStale = snapshot?.bcbRateStale ?? false
+  
+  // Use BCB rate from market data if available, otherwise from indicator endpoint
+  const displayRate = bcbRateFromMarketData ?? officialRate
 
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return 'N/A'
@@ -99,14 +105,32 @@ export function BCBRateCard() {
             <p className="text-sm text-muted-foreground mb-1">Tipo de Cambio Oficial</p>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight">
-                {officialRate.toFixed(2)}
+                {displayRate.toFixed(2)}
               </span>
               <span className="text-lg text-muted-foreground">BOB/USD</span>
             </div>
           </div>
-          <Badge variant="outline" className="text-xs">
-            {formatDate(indicator?.date)}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className="text-xs">
+              {formatDate(snapshot?.bcbRateDate ?? indicator?.date)}
+            </Badge>
+            {/* BCB Rate Stale Warning */}
+            {bcbRateStale && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-warning flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Desactualizado
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>La tasa BCB puede estar desactualizada</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
 
         {/* P2P Comparison */}
@@ -118,16 +142,23 @@ export function BCBRateCard() {
           
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Prima de Mercado</span>
-            <Badge 
-              variant={premium > 30 ? 'destructive' : premium > 15 ? 'warning' : 'info'}
-              className="flex items-center gap-1"
-            >
-              <TrendingUp className="h-3 w-3" />
-              +{premium.toFixed(2)}%
-            </Badge>
+            {/* Using backend-computed premium directly */}
+            {premium !== null && premium !== undefined ? (
+              <Badge 
+                variant={premium > 30 ? 'destructive' : premium > 15 ? 'warning' : 'info'}
+                className="flex items-center gap-1"
+              >
+                <TrendingUp className="h-3 w-3" />
+                +{premium.toFixed(2)}%
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-xs">
+                N/D
+              </Badge>
+            )}
           </div>
 
-          {premium > 30 && (
+          {premium !== null && premium !== undefined && premium > 30 && (
             <div className="flex items-start gap-2 pt-2 border-t border-border">
               <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">

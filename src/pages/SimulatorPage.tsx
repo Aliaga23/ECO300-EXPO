@@ -24,12 +24,15 @@ export default function SimulatorPage() {
     elasticityCoefficient: parseFloat(lastCalculation.elasticity_coefficient!),
     elasticityMagnitude: Math.abs(parseFloat(lastCalculation.elasticity_coefficient!)),
     classification: lastCalculation.classification,
+    classificationLabel: null, // Will use local mapping
     confidenceInterval: null,
     rSquared: null,
     standardError: null,
     dataPointsUsed: null,
     averageDataQuality: null,
     isSignificant: null,
+    isReliable: true, // Assume reliable for historical display
+    reliabilityNote: null,
     errorMessage: null,
     createdAt: new Date(lastCalculation.created_at),
     completedAt: null,

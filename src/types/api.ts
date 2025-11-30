@@ -15,6 +15,37 @@ export interface MarketSnapshot {
   data_quality_score: string;
 }
 
+// Latest Market Data with computed fields from backend
+export type PriceChangeDirection = 'up' | 'down' | 'neutral';
+
+export interface LatestMarketData {
+  // Core snapshot fields
+  id: number;
+  timestamp: string;
+  average_sell_price: string;
+  average_buy_price: string;
+  total_volume: string;
+  spread_percentage: string;
+  num_active_traders: number;
+  data_quality_score: string;
+  
+  // Price change fields (computed by backend)
+  price_change_percentage: number | null;
+  price_change_direction: PriceChangeDirection | null;
+  previous_price: number | null;
+  is_first_snapshot: boolean;
+  
+  // Time gap warning
+  time_gap_minutes: number | null;
+  time_gap_warning: boolean;
+  
+  // BCB / Market premium fields
+  market_premium_percentage: number | null;
+  bcb_official_rate: number | null;
+  bcb_rate_date: string | null;
+  bcb_rate_stale: boolean;
+}
+
 export interface MacroeconomicIndicator {
   id: number;
   date: string;
@@ -121,12 +152,15 @@ export interface ElasticityCalculation {
   elasticity_coefficient: string | null;
   elasticity_magnitude?: number;
   classification: ElasticityClassification | null;
+  classification_label?: string | null;
   confidence_interval_95: ConfidenceInterval | null;
   r_squared: string | null;
   standard_error: string | null;
   data_points_used: number | null;
   average_data_quality: string | null;
   is_significant: boolean | null;
+  is_reliable?: boolean;
+  reliability_note?: string | null;
   error_message: string | null;
   created_at: string;
   completed_at: string | null;
@@ -230,6 +264,25 @@ export interface ParsedMarketSnapshot {
   dataQualityScore: number;
 }
 
+// Parsed Latest Market Data with all computed fields
+export interface ParsedLatestMarketData extends ParsedMarketSnapshot {
+  // Price change fields (computed by backend)
+  priceChangePercentage: number | null;
+  priceChangeDirection: PriceChangeDirection | null;
+  previousPrice: number | null;
+  isFirstSnapshot: boolean;
+  
+  // Time gap warning
+  timeGapMinutes: number | null;
+  timeGapWarning: boolean;
+  
+  // BCB / Market premium fields
+  marketPremiumPercentage: number | null;
+  bcbOfficialRate: number | null;
+  bcbRateDate: string | null;
+  bcbRateStale: boolean;
+}
+
 export interface ParsedElasticityCalculation {
   id: string;
   status: CalculationStatus;
@@ -240,12 +293,15 @@ export interface ParsedElasticityCalculation {
   elasticityCoefficient: number | null;
   elasticityMagnitude: number | null;
   classification: ElasticityClassification | null;
+  classificationLabel: string | null;
   confidenceInterval: ConfidenceInterval | null;
   rSquared: number | null;
   standardError: number | null;
   dataPointsUsed: number | null;
   averageDataQuality: number | null;
   isSignificant: boolean | null;
+  isReliable: boolean;
+  reliabilityNote: string | null;
   errorMessage: string | null;
   createdAt: Date;
   completedAt: Date | null;

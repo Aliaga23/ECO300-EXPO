@@ -1,6 +1,7 @@
 import axios, { type AxiosError } from 'axios';
 import type {
   MarketSnapshot,
+  LatestMarketData,
   MacroeconomicIndicator,
   CalculationRequest,
   CalculationStatusResponse,
@@ -13,6 +14,7 @@ import type {
   PaginatedResponse,
   APIError,
   ParsedMarketSnapshot,
+  ParsedLatestMarketData,
   ParsedElasticityCalculation,
   DataCoverage,
   AggregatedMarketDataResponse,
@@ -85,6 +87,36 @@ export function parseMarketSnapshot(snapshot: MarketSnapshot): ParsedMarketSnaps
   };
 }
 
+export function parseLatestMarketData(data: LatestMarketData): ParsedLatestMarketData {
+  return {
+    // Core snapshot fields
+    id: data.id,
+    timestamp: new Date(data.timestamp),
+    averageSellPrice: parseFloat(data.average_sell_price),
+    averageBuyPrice: parseFloat(data.average_buy_price),
+    totalVolume: parseFloat(data.total_volume),
+    spreadPercentage: parseFloat(data.spread_percentage),
+    numActiveTraders: data.num_active_traders,
+    dataQualityScore: parseFloat(data.data_quality_score),
+    
+    // Price change fields (from backend)
+    priceChangePercentage: data.price_change_percentage,
+    priceChangeDirection: data.price_change_direction,
+    previousPrice: data.previous_price,
+    isFirstSnapshot: data.is_first_snapshot ?? false,
+    
+    // Time gap warning
+    timeGapMinutes: data.time_gap_minutes,
+    timeGapWarning: data.time_gap_warning ?? false,
+    
+    // BCB / Market premium fields
+    marketPremiumPercentage: data.market_premium_percentage,
+    bcbOfficialRate: data.bcb_official_rate,
+    bcbRateDate: data.bcb_rate_date,
+    bcbRateStale: data.bcb_rate_stale ?? false,
+  };
+}
+
 export function parseElasticityCalculation(calc: ElasticityCalculation): ParsedElasticityCalculation {
   return {
     id: calc.id,
@@ -96,12 +128,15 @@ export function parseElasticityCalculation(calc: ElasticityCalculation): ParsedE
     elasticityCoefficient: calc.elasticity_coefficient ? parseFloat(calc.elasticity_coefficient) : null,
     elasticityMagnitude: calc.elasticity_magnitude ?? null,
     classification: calc.classification,
+    classificationLabel: calc.classification_label ?? null,
     confidenceInterval: calc.confidence_interval_95,
     rSquared: calc.r_squared ? parseFloat(calc.r_squared) : null,
     standardError: calc.standard_error ? parseFloat(calc.standard_error) : null,
     dataPointsUsed: calc.data_points_used,
     averageDataQuality: calc.average_data_quality ? parseFloat(calc.average_data_quality) : null,
     isSignificant: calc.is_significant,
+    isReliable: calc.is_reliable ?? true,
+    reliabilityNote: calc.reliability_note ?? null,
     errorMessage: calc.error_message,
     createdAt: new Date(calc.created_at),
     completedAt: calc.completed_at ? new Date(calc.completed_at) : null,
@@ -115,13 +150,14 @@ export function parseElasticityCalculation(calc: ElasticityCalculation): ParsedE
 
 export const marketDataApi = {
   /**
-   * Get latest market snapshot
+   * Get latest market snapshot with computed fields from backend
+   * Includes: price_change_percentage, price_change_direction, market_premium_percentage, etc.
    * Rate limit: 100 requests/hour
    */
-  async getLatest(): Promise<ParsedMarketSnapshot> {
+  async getLatest(): Promise<ParsedLatestMarketData> {
     try {
-      const response = await apiClient.get<MarketSnapshot>('/market-data/latest/');
-      return parseMarketSnapshot(response.data);
+      const response = await apiClient.get<LatestMarketData>('/market-data/latest/');
+      return parseLatestMarketData(response.data);
     } catch (error) {
       throw handleApiError(error as AxiosError<APIError>);
     }

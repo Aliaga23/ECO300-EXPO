@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   Activity,
   CheckCircle2,
@@ -19,6 +20,8 @@ import {
   Target,
   Database,
   Sparkles,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react'
 import type { ParsedElasticityCalculation } from '@/types/api'
 import { useState } from 'react'
@@ -41,11 +44,14 @@ export function ElasticityResults({
 }: ElasticityResultsProps) {
   const [showDetails, setShowDetails] = useState(false)
 
+  // Use backend classification_label if available, fallback to local mapping
   const getClassificationConfig = () => {
+    const backendLabel = calculation.classificationLabel
+    
     switch (calculation.classification) {
       case 'ELASTIC':
         return {
-          label: 'ELÁSTICA',
+          label: backendLabel || 'ELÁSTICA',
           variant: 'elastic' as const,
           icon: TrendingUp,
           description: 'La demanda es sensible a cambios de precio (|Ed| > 1)',
@@ -53,7 +59,7 @@ export function ElasticityResults({
         }
       case 'INELASTIC':
         return {
-          label: 'INELÁSTICA',
+          label: backendLabel || 'INELÁSTICA',
           variant: 'inelastic' as const,
           icon: TrendingDown,
           description: 'La demanda es poco sensible a cambios de precio (|Ed| < 1)',
@@ -61,7 +67,7 @@ export function ElasticityResults({
         }
       case 'UNITARY':
         return {
-          label: 'UNITARIA',
+          label: backendLabel || 'UNITARIA',
           variant: 'unitary' as const,
           icon: Minus,
           description: 'La demanda varía proporcionalmente al precio (|Ed| = 1)',
@@ -69,7 +75,7 @@ export function ElasticityResults({
         }
       default:
         return {
-          label: 'N/A',
+          label: backendLabel || 'N/A',
           variant: 'secondary' as const,
           icon: Activity,
           description: '',
@@ -130,12 +136,63 @@ export function ElasticityResults({
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {/* Reliability Warning - show prominently if not reliable */}
+        {!calculation.isReliable && (
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/30">
+            <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-warning">Resultado inestable</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {calculation.reliabilityNote || 'Interpretar con cautela - los datos pueden ser insuficientes o inconsistentes.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Hero Section - Main Results */}
-        <div className="text-center p-6 rounded-xl bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20">
-          <p className="text-sm text-muted-foreground mb-2">Coeficiente de Elasticidad</p>
+        <div className={cn(
+          "text-center p-6 rounded-xl border",
+          calculation.isReliable 
+            ? "bg-linear-to-br from-primary/10 to-primary/5 border-primary/20"
+            : "bg-linear-to-br from-warning/10 to-warning/5 border-warning/20"
+        )}>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <p className="text-sm text-muted-foreground">Coeficiente de Elasticidad</p>
+            {/* Reliability indicator badge */}
+            {calculation.isReliable ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="success" className="text-xs px-1.5 py-0">
+                      <ShieldCheck className="h-3 w-3" />
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Resultado confiable</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="warning" className="text-xs px-1.5 py-0">
+                      <ShieldAlert className="h-3 w-3" />
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{calculation.reliabilityNote || 'Resultado no confiable'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <div className="flex items-center justify-center gap-3 mb-3">
             <span className={cn('text-5xl font-bold tracking-tight', classificationConfig.color)}>
-              {calculation.elasticityCoefficient?.toFixed(4) || 'N/A'}
+              {/* Use elasticityMagnitude for display if available, otherwise coefficient */}
+              {calculation.elasticityMagnitude?.toFixed(4) 
+                ?? calculation.elasticityCoefficient?.toFixed(4) 
+                ?? 'N/A'}
             </span>
           </div>
           <Badge variant={classificationConfig.variant} className="text-sm px-4 py-1">
