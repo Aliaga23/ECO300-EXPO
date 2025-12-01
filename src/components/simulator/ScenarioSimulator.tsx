@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSimulator } from '@/hooks'
 import type { ScenarioRequest, ScenarioResponse, ParsedElasticityCalculation } from '@/types/api'
 import {
@@ -18,6 +19,8 @@ import {
   Info,
   Lightbulb,
   HelpCircle,
+  AlertTriangle,
+  Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -79,7 +82,7 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
               <span className="w-6 h-6 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center text-xs">P</span>
               Precio USDT/BOB
             </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="priceInitial">Precio Inicial</Label>
                 <div className="relative">
@@ -123,7 +126,7 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
               <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center text-xs">Q</span>
               Cantidad Demandada
             </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="quantityInitial">Cantidad Inicial</Label>
                 <div className="relative">
@@ -260,13 +263,22 @@ interface SimulatorResultsProps {
 }
 
 function SimulatorResults({ result, lastCalculation, showComparison, onToggleComparison }: SimulatorResultsProps) {
-  const classConfig = result.classification === 'elastic' 
+  // Use backend elasticity_category with fallback to classification for backward compatibility
+  const effectiveCategory = result.elasticity_category ?? result.classification;
+  
+  const classConfig = effectiveCategory === 'elastic' 
     ? { label: 'ELÁSTICA', variant: 'elastic' as const, icon: TrendingUp, color: 'text-blue-500' }
-    : result.classification === 'inelastic'
+    : effectiveCategory === 'inelastic'
     ? { label: 'INELÁSTICA', variant: 'inelastic' as const, icon: TrendingDown, color: 'text-red-500' }
-    : { label: 'UNITARIA', variant: 'unitary' as const, icon: Minus, color: 'text-yellow-500' }
+    : effectiveCategory === 'unitary' || effectiveCategory === 'unit_elastic'
+    ? { label: 'UNITARIA', variant: 'unitary' as const, icon: Minus, color: 'text-yellow-500' }
+    : { label: 'N/A', variant: 'secondary' as const, icon: Activity, color: 'text-muted-foreground' }
 
   const ClassIcon = classConfig.icon
+  
+  // Handle hypothetical scenario warning with backward compatibility
+  const isHypothetical = result.is_hypothetical ?? false;
+  const warningMessage = result.warning_message ?? null;
 
   return (
     <div className="space-y-6">
@@ -276,17 +288,57 @@ function SimulatorResults({ result, lastCalculation, showComparison, onToggleCom
         <div className={cn('text-4xl font-bold mb-2', classConfig.color)}>
           {result.elasticity.toFixed(4)}
         </div>
-        <Badge variant={classConfig.variant} className="text-sm">
-          <ClassIcon className="h-4 w-4 mr-1" />
-          Demanda {classConfig.label}
-        </Badge>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant={classConfig.variant} className="text-sm cursor-help">
+                  <ClassIcon className="h-4 w-4 mr-1" />
+                  Demanda {classConfig.label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  <strong>Demanda {classConfig.label.toLowerCase()}:</strong> La clasificación se basa en el valor absoluto |Ed|.
+                  {effectiveCategory === 'elastic' 
+                    ? ' Cuando |Ed| > 1, la cantidad demandada cambia más que proporcionalmente al precio.'
+                    : effectiveCategory === 'inelastic'
+                    ? ' Cuando |Ed| < 1, la cantidad demandada cambia menos que proporcionalmente al precio.'
+                    : ' Cuando |Ed| = 1, la cantidad demandada cambia proporcionalmente al precio.'
+                  }
+                </p>
+                <p className="text-xs mt-1 text-muted-foreground">
+                  El signo negativo es normal (ley de la demanda): precio ↑, cantidad ↓
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {/* Hypothetical Badge */}
+          {isHypothetical && (
+            <Badge variant="warning" className="text-xs">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Hipotético
+            </Badge>
+          )}
+        </div>
       </div>
+
+      {/* Hypothetical Scenario Warning */}
+      {isHypothetical && warningMessage && (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <span className="font-medium">Escenario Hipotético:</span> {warningMessage}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Breakdown */}
       <div className="space-y-3">
         <h4 className="text-sm font-medium">Desglose del Cálculo</h4>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">Cambio en Precio</p>
@@ -361,7 +413,7 @@ function SimulatorResults({ result, lastCalculation, showComparison, onToggleCom
                 Comparación con Último Cálculo Real
               </h4>
               
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
                 <div>
                   <p className="text-xs text-muted-foreground">Tu Hipótesis</p>
                   <p className="text-xl font-bold">{result.elasticity.toFixed(4)}</p>

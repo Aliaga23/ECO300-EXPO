@@ -250,10 +250,30 @@ export function ElasticityResults({
                 ?? 'N/A'}
             </span>
           </div>
-          <Badge variant={classificationConfig.variant} className="text-sm px-4 py-1">
-            <ClassificationIcon className="h-4 w-4 mr-1" />
-            Demanda {classificationConfig.label}
-          </Badge>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant={classificationConfig.variant} className="text-sm px-4 py-1 cursor-help">
+                  <ClassificationIcon className="h-4 w-4 mr-1" />
+                  Demanda {classificationConfig.label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  <strong>Demanda {classificationConfig.label.toLowerCase()}:</strong> La clasificación se basa en el valor absoluto |Ed|.
+                  {calculation.classification === 'ELASTIC' 
+                    ? ' Cuando |Ed| > 1, la cantidad demandada cambia más que proporcionalmente al precio.'
+                    : calculation.classification === 'INELASTIC'
+                    ? ' Cuando |Ed| < 1, la cantidad demandada cambia menos que proporcionalmente al precio.'
+                    : ' Cuando |Ed| = 1, la cantidad demandada cambia proporcionalmente al precio.'
+                  }
+                </p>
+                <p className="text-xs mt-1 text-muted-foreground">
+                  El signo negativo es normal (ley de la demanda): precio ↑, cantidad ↓
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <p className="text-xs text-muted-foreground mt-2">
             {classificationConfig.description}
           </p>

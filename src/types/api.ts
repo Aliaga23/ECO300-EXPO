@@ -214,6 +214,10 @@ export interface ScenarioResponse {
   percentage_change_price: number;
   quantity_change: number;
   price_change: number;
+  // New backend fields for hypothetical scenarios
+  is_hypothetical?: boolean;
+  warning_message?: string;
+  elasticity_category?: 'elastic' | 'inelastic' | 'unit_elastic';
 }
 
 // ============================================
