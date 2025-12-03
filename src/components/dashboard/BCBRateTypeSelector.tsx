@@ -173,4 +173,69 @@ export function BCBRateTypeSelectorCompact({
   )
 }
 
+// Mobile-friendly ultra-compact selector
+export function BCBRateTypeSelectorMobile({ 
+  className 
+}: { 
+  className?: string 
+}) {
+  const { 
+    selectedRateType, 
+    setSelectedRateType, 
+    officialRate, 
+    referentialRate, 
+    loading 
+  } = useBCBRateContext()
+
+  const handleRateTypeChange = (value: 'official' | 'referential') => {
+    setSelectedRateType(value)
+  }
+
+  const officialAvailable = isRateTypeAvailable('official', officialRate, referentialRate)
+  const referentialAvailable = isRateTypeAvailable('referential', officialRate, referentialRate)
+
+  if (loading) {
+    return (
+      <div className={cn('flex items-center justify-center h-7 w-14 bg-muted rounded-md', className)}>
+        <span className="text-xs text-muted-foreground">...</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn('inline-flex p-0.5 bg-muted rounded-md', className)}>
+      <button
+        type="button"
+        onClick={() => handleRateTypeChange('official')}
+        disabled={!officialAvailable}
+        className={cn(
+          'px-2 py-1 text-xs font-medium rounded transition-all duration-150',
+          'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          selectedRateType === 'official'
+            ? 'bg-primary text-primary-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground',
+          !officialAvailable && 'opacity-50 cursor-not-allowed'
+        )}
+      >
+        Oficial
+      </button>
+      <button
+        type="button"
+        onClick={() => handleRateTypeChange('referential')}
+        disabled={!referentialAvailable}
+        className={cn(
+          'px-2 py-1 text-xs font-medium rounded transition-all duration-150',
+          'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          selectedRateType === 'referential'
+            ? 'bg-primary text-primary-foreground shadow-sm'
+            : 'text-muted-foreground hover:text-foreground',
+          !referentialAvailable && 'opacity-50 cursor-not-allowed'
+        )}
+      >
+        Referencial
+      </button>
+    </div>
+  )
+}
+
 export default BCBRateTypeSelector

@@ -139,9 +139,10 @@ export function MarketDataCard() {
       </CardHeader>
 
       {/* Content - Optimized heights to fit in 420px card */}
-      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
-        {/* Main Price Display - Fixed height 60px */}
-        <div className="h-[60px] flex items-center justify-between shrink-0">
+      <CardContent className="flex-1 grid grid-rows-1 px-4 pb-3 pt-1">
+        <div className="place-self-center w-full">
+          {/* Main Price Display - Fixed height 60px */}
+          <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground mb-0.5">Precio USDT/BOB</p>
             <div className="flex items-baseline gap-2">
@@ -227,10 +228,11 @@ export function MarketDataCard() {
         </div>
 
         {/* Footer - Fixed height 32px */}
-        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
-          <p className="text-xs text-muted-foreground">
-            Binance P2P es actualizado cada 30 minutos
-          </p>
+          <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+            <p className="text-xs text-muted-foreground">
+              Binance P2P es actualizado cada 30 minutos
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -256,9 +258,10 @@ function MarketDataSkeleton() {
       </CardHeader>
 
       {/* Content - Optimized heights */}
-      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
-        {/* Main price - h-[60px] */}
-        <div className="h-[60px] flex items-center justify-between shrink-0">
+      <CardContent className="flex-1 grid grid-rows-1 px-4 pb-3 pt-1">
+        <div className="place-self-center w-full">
+          {/* Main price - h-[60px] */}
+          <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
             <Skeleton className="h-3 w-20 mb-1" />
             <Skeleton className="h-9 w-24" />
@@ -303,8 +306,9 @@ function MarketDataSkeleton() {
         </div>
 
         {/* Footer - h-8 */}
-        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
-          <Skeleton className="h-3 w-40" />
+          <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+            <Skeleton className="h-3 w-40" />
+          </div>
         </div>
       </CardContent>
     </Card>

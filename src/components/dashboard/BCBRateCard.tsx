@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { useMarketData } from '@/hooks'
 import { useBCBRateContext, calculatePremium, formatRateType } from '@/contexts/BCBRateContext'
-import { BCBRateTypeSelectorCompact } from './BCBRateTypeSelector'
+import { BCBRateTypeSelectorCompact, BCBRateTypeSelectorMobile } from './BCBRateTypeSelector'
 import { Landmark, Info, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
 
 // Fixed card height constant - ensures consistency across all states
@@ -87,9 +87,14 @@ export function BCBRateCard() {
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
             <Landmark className="h-5 w-5 text-primary shrink-0" />
-            <CardTitle className="text-lg font-semibold truncate">Tipo de Cambio BCB</CardTitle>
+            <CardTitle className="text-lg font-semibold">Tipo de Cambio BCB</CardTitle>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {/* Mobile-only compact selector */}
+            <div className="block sm:hidden">
+              <BCBRateTypeSelectorMobile />
+            </div>
+            {/* Desktop selector */}
             <div className="hidden sm:block">
               <BCBRateTypeSelectorCompact />
             </div>
@@ -137,9 +142,10 @@ export function BCBRateCard() {
       </CardHeader>
 
       {/* Content - Optimized heights to fit in 420px card */}
-      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
-        {/* Main Rate Display - Fixed height 60px (matches MarketDataCard) */}
-        <div className="h-[60px] flex items-center justify-between shrink-0">
+      <CardContent className="flex-1 grid grid-rows-1 px-4 pb-3 pt-1">
+        <div className="place-self-center w-full">
+          {/* Main Rate Display - Fixed height 60px (matches MarketDataCard) */}
+          <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground mb-0.5">
               Tipo {formatRateType(selectedRateType)}
@@ -222,10 +228,11 @@ export function BCBRateCard() {
         <div className="h-[40px] shrink-0 mt-1" />
 
         {/* Footer - Fixed height 32px (matches MarketDataCard) */}
-        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
-          <p className="text-xs text-muted-foreground">
-            BCB actualiza a las 8:00 AM (hora Bolivia)
-          </p>
+          <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+            <p className="text-xs text-muted-foreground">
+              BCB actualiza a las 8:00 AM (hora Bolivia)
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -243,16 +250,17 @@ function BCBRateSkeleton() {
             <Skeleton className="h-6 w-36" />
           </div>
           <div className="flex items-center gap-2">
-            <Skeleton className="hidden sm:block h-9 w-44 rounded-lg" />
+            <Skeleton className="h-9 w-44 rounded-lg" />
             <Skeleton className="h-8 w-8 rounded" />
           </div>
         </div>
       </CardHeader>
 
       {/* Content - Optimized heights */}
-      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
-        {/* Main rate - h-[60px] */}
-        <div className="h-[60px] flex items-center justify-between shrink-0">
+      <CardContent className="flex-1 grid grid-rows-1 px-4 pb-3 pt-1">
+        <div className="place-self-center w-full">
+          {/* Main rate - h-[60px] */}
+          <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
             <Skeleton className="h-3 w-20 mb-1" />
             <Skeleton className="h-9 w-24" />
@@ -288,8 +296,9 @@ function BCBRateSkeleton() {
         <div className="h-[40px] shrink-0 mt-1" />
 
         {/* Footer - h-8 */}
-        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
-          <Skeleton className="h-3 w-48" />
+          <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+            <Skeleton className="h-3 w-48" />
+          </div>
         </div>
       </CardContent>
     </Card>
