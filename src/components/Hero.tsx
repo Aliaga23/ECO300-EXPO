@@ -6,7 +6,7 @@ import { Link } from "react-router-dom"
 import { useMarketData } from "@/hooks"
 
 export function Hero() {
-  const { snapshot, loading } = useMarketData(60000) // Refresh every 60s on landing
+  const { snapshot, loading } = useMarketData() // Refresh interval controlled by React Query
 
   // Use backend-computed values - no local calculations
   const currentPrice = snapshot?.averageSellPrice ?? 0

@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMarketData } from '@/hooks'
 import { binanceP2PService, type MarketData } from '../services/binanceP2P'
-import { formatTimeAgo } from '@/utils/dateUtils'
 import { Header } from '@/components/Header'
 import {
   LineChart,
@@ -99,7 +96,7 @@ export default function AnalysisPage() {
   const chartRef = useRef<HTMLDivElement>(null)
 
   // Use centralized market data from React Query instead of independent polling
-  const { snapshot } = useMarketData()
+  useMarketData()
   
   // Fetch Binance P2P data (this is specific to AnalysisPage, not duplicated elsewhere)
   const fetchBinanceData = useCallback(async () => {

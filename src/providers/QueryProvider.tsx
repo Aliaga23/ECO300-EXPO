@@ -7,7 +7,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30000, // Data remains fresh for 30 seconds
-      cacheTime: 300000, // Cache persists for 5 minutes
+      gcTime: 300000, // Cache persists for 5 minutes (v5: cacheTime -> gcTime)
       refetchOnWindowFocus: false, // Disable refetch on window focus
       refetchOnMount: false, // Disable refetch on component mount if data is cached
       retry: 2, // Retry failed requests twice

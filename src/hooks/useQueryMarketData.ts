@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { marketDataApi } from '@/services/api'
-import type { MacroeconomicIndicator, AggregatedMarketDataRequest, AggregatedMarketDataResponse, ParsedLatestMarketData } from '@/types/api'
+import type { AggregatedMarketDataRequest } from '@/types/api'
 
 // Centralized hook for latest market data - replaces all independent polling
 export function useLatestMarketData() {
