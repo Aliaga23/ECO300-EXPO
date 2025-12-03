@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { marketDataApi, ApiException } from '@/services/api';
 import type { 
   ParsedLatestMarketData, 
@@ -8,7 +8,9 @@ import type {
   TimeRange,
   Granularity,
   DataSource,
+  ExchangeRateDetail,
 } from '@/types/api';
+import { useLatestMarketData, useAggregatedMarketData, useBCBIndicators } from './useQueryMarketData';
 
 interface UseMarketDataReturn {
   /** Latest market snapshot with all computed fields from backend */
@@ -19,96 +21,99 @@ interface UseMarketDataReturn {
   refresh: () => Promise<void>;
 }
 
-export function useMarketData(autoRefreshMs = 30000): UseMarketDataReturn {
-  const [snapshot, setSnapshot] = useState<ParsedLatestMarketData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const intervalRef = useRef<number | null>(null);
+export function useMarketData(): UseMarketDataReturn {
+  // Use React Query instead of manual polling - eliminates duplicate requests
+  const { data: snapshot, isLoading, error, refetch } = useLatestMarketData();
+  
+  // Note: marketDataApi.getLatest() already calls parseLatestMarketData() internally
+  // so snapshot is already the parsed ParsedLatestMarketData object
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await marketDataApi.getLatest();
-      setSnapshot(data);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      if (err instanceof ApiException) {
-        setError(err.detail as string);
-      } else {
-        setError('Failed to fetch market data');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-
-    if (autoRefreshMs > 0) {
-      intervalRef.current = window.setInterval(fetchData, autoRefreshMs);
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [autoRefreshMs]); // intentionally excluding fetchData to avoid infinite loop
-
+  // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    setLoading(true);
-    await fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
-  return { snapshot, loading, error, lastUpdated, refresh };
+  return { 
+    snapshot: snapshot || null, // Convert undefined to null for compatibility
+    loading: isLoading, 
+    error: error?.message || null, 
+    lastUpdated: snapshot?.timestamp ? new Date(snapshot.timestamp) : null,
+    refresh 
+  };
+}
+
+// Helper function to parse exchange rate with backward compatibility
+function parseExchangeRate(rate: string | ExchangeRateDetail | undefined): ExchangeRateDetail | null {
+  if (!rate) return null;
+  
+  // If it's already the new object structure, return as-is
+  if (typeof rate === 'object' && 'buy' in rate && 'sell' in rate) {
+    return rate as ExchangeRateDetail;
+  }
+  
+  // Legacy string format - create ExchangeRateDetail from string
+  const rateValue = typeof rate === 'string' ? parseFloat(rate) : 0;
+  if (isNaN(rateValue)) return null;
+  
+  // For legacy format, we don't have buy/sell spread, so use same value for both
+  return {
+    buy: rateValue.toFixed(2),
+    sell: rateValue.toFixed(2),
+    spread: '0.00',
+    spread_percentage: '0.00',
+  };
 }
 
 interface UseBCBRateReturn {
   indicator: MacroeconomicIndicator | null;
-  officialRate: number;
+  officialRate: ExchangeRateDetail | null;
+  referentialRate: ExchangeRateDetail | null;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
 
 export function useBCBRate(): UseBCBRateReturn {
-  const [indicator, setIndicator] = useState<MacroeconomicIndicator | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await marketDataApi.getIndicators();
-      setIndicator(data);
-      setError(null);
-    } catch (err) {
-      if (err instanceof ApiException) {
-        setError(err.detail as string);
-      } else {
-        setError('Failed to fetch BCB rate');
-      }
-    } finally {
-      setLoading(false);
+  // Use React Query instead of manual polling - eliminates duplicate requests
+  const { data: indicator, isLoading, error, refetch } = useBCBIndicators();
+  
+  // Parse rates with backward compatibility
+  const officialRate = useMemo(() => {
+    if (!indicator) return null;
+    
+    // Try new structure first, then legacy
+    if (indicator.official_exchange_rate && typeof indicator.official_exchange_rate === 'object') {
+      return indicator.official_exchange_rate as ExchangeRateDetail;
     }
-  }, []);
+    
+    // Fallback to legacy string format
+    return parseExchangeRate(indicator.official_exchange_rate);
+  }, [indicator]);
 
-  useEffect(() => {
-    fetchData();
-    // BCB rate updates daily, cache for 1 hour
-    const interval = setInterval(fetchData, 60 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  const referentialRate = useMemo(() => {
+    if (!indicator) return null;
+    
+    // New field - if available, parse it
+    if (indicator.referential_exchange_rate) {
+      return indicator.referential_exchange_rate;
+    }
+    
+    return null; // Referential rate not available in legacy format
+  }, [indicator]);
 
-  const officialRate = indicator ? parseFloat(indicator.official_exchange_rate) : 6.96;
-
+  // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    setLoading(true);
-    await fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
-  return { indicator, officialRate, loading, error, refresh };
+  return { 
+    indicator: indicator || null, // Convert undefined to null for compatibility
+    officialRate, 
+    referentialRate, 
+    loading: isLoading, 
+    error: error?.message || null, 
+    refresh 
+  };
 }
 
 interface UseHistoricalDataReturn {
@@ -187,90 +192,25 @@ interface UseAggregatedDataReturn {
   refresh: () => Promise<void>;
 }
 
-// Simple in-memory cache for session
-const aggregatedCache = new Map<string, { data: AggregatedMarketDataResponse; timestamp: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache
-
-function getCacheKey(params: UseAggregatedDataParams): string {
-  return `${params.timeRange}:${params.granularity}:${params.source || 'p2p'}`;
-}
-
 export function useAggregatedData(params: UseAggregatedDataParams): UseAggregatedDataReturn {
-  const { timeRange, granularity, source = 'p2p' } = params;
+  // Use React Query instead of manual caching and polling - eliminates duplicate requests
+  const { data, isLoading, error, refetch } = useAggregatedMarketData({
+    time_range: params.timeRange,
+    granularity: params.granularity,
+    source: params.source || 'p2p',
+  });
   
-  const [data, setData] = useState<AggregatedMarketDataResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Memoize cache key to prevent unnecessary fetches
-  const cacheKey = useMemo(() => getCacheKey(params), [timeRange, granularity, source]);
-
-  const fetchData = useCallback(async (skipCache = false) => {
-    // Check cache first
-    if (!skipCache) {
-      const cached = aggregatedCache.get(cacheKey);
-      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        setData(cached.data);
-        setLoading(false);
-        setError(null);
-        return;
-      }
-    }
-
-    // Cancel previous request if still in flight
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await marketDataApi.getAggregated({
-        time_range: timeRange,
-        granularity,
-        source,
-      });
-      
-      // Cache the result
-      aggregatedCache.set(cacheKey, { data: response, timestamp: Date.now() });
-      
-      setData(response);
-      setError(null);
-    } catch (err) {
-      // Ignore abort errors
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
-      }
-      
-      if (err instanceof ApiException) {
-        setError(err.detail as string);
-      } else {
-        setError('Error al obtener datos agregados');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [cacheKey, timeRange, granularity, source]);
-
-  // Fetch when params change
-  useEffect(() => {
-    fetchData();
-    
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchData]);
-
+  // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    await fetchData(true); // Skip cache on manual refresh
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
-  return { data, loading, error, refresh };
+  return { 
+    data: data || null, // Convert undefined to null for compatibility
+    loading: isLoading, 
+    error: error?.message || null, 
+    refresh 
+  };
 }
 
 // Helper to format data source for display

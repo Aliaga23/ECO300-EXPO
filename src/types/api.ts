@@ -46,13 +46,36 @@ export interface LatestMarketData {
   bcb_rate_stale: boolean;
 }
 
+// BCB exchange rate detail structure
+export interface ExchangeRateDetail {
+  buy: string;
+  sell: string;
+  spread: string;
+  spread_percentage: string;
+}
+
+// User preference for which BCB rate to use
+export type BCBRateType = 'official' | 'referential';
+
+// Premium calculation result
+export interface PremiumMetrics {
+  usdt_price: number;
+  bcb_rate: number;
+  bcb_rate_type: BCBRateType;
+  premium_absolute: number;
+  premium_percentage: number;
+  is_above_bcb: boolean;
+}
+
 export interface MacroeconomicIndicator {
   id: number;
   date: string;
-  official_exchange_rate: string;
+  official_exchange_rate: string | ExchangeRateDetail; // Legacy string or new object structure
+  referential_exchange_rate?: ExchangeRateDetail; // New field - optional for backward compatibility
   monthly_inflation_rate: string | null;
   accumulated_inflation: string | null;
   source: string;
+  official_exchange_rate_legacy?: string; // Legacy field for backward compatibility
   raw_data: {
     venta: string;
     compra: string;

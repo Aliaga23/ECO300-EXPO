@@ -31,7 +31,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Market Overview Cards */}
+        {/* Market Overview Cards - Cards manage their own height internally */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MarketDataCard />
           <BCBRateCard />

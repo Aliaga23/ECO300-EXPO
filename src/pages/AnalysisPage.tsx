@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
-import { Card } from '../components/ui/card'
-import { Skeleton } from '../components/ui/skeleton'
-import { Header } from '../components/Header'
-import { TrendingUp, TrendingDown, DollarSign, Activity, Users, BarChart3 } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useMarketData } from '@/hooks'
+import { binanceP2PService, type MarketData } from '../services/binanceP2P'
+import { formatTimeAgo } from '@/utils/dateUtils'
+import { Header } from '@/components/Header'
 import {
   LineChart,
   Line,
@@ -13,8 +17,16 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts'
-import { binanceP2PService, type MarketData } from '../services/binanceP2P'
+import {
+  Activity,
+  DollarSign,
+  BarChart3,
+  Users,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 const OFFICIAL_USD_BOB_RATE = 6.96
+
 const MetricSkeleton = () => (
   <Card className="p-6">
     <div className="flex items-center justify-between">
@@ -86,31 +98,35 @@ export default function AnalysisPage() {
   const [zoomDomain, setZoomDomain] = useState<{ startIndex: number; endIndex: number } | null>(null)
   const chartRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [market, historical] = await Promise.all([
-          binanceP2PService.getMarketData('SELL'),
-          binanceP2PService.getHistoricalData(30)
-        ])
-        
-        setMarketData(market)
-        setHistoricalData(historical)
-        setLastUpdate(new Date())
-        setLoading(false)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-       
-      }
+  // Use centralized market data from React Query instead of independent polling
+  const { snapshot } = useMarketData()
+  
+  // Fetch Binance P2P data (this is specific to AnalysisPage, not duplicated elsewhere)
+  const fetchBinanceData = useCallback(async () => {
+    try {
+      const [market, historical] = await Promise.all([
+        binanceP2PService.getMarketData('SELL'),
+        binanceP2PService.getHistoricalData(30)
+      ])
+      
+      setMarketData(market)
+      setHistoricalData(historical)
+      setLastUpdate(new Date())
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching Binance data:', error)
+      setLoading(false)
     }
+  }, [])
 
-    fetchData()
+  useEffect(() => {
+    fetchBinanceData()
     
-   
-    const interval = setInterval(fetchData, 5 * 60 * 1000)
+    // Keep 5-minute polling for Binance data only (not market data which is handled by React Query)
+    const interval = setInterval(fetchBinanceData, 5 * 60 * 1000)
     
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchBinanceData])
 
  
   const calculateElasticity = (currentPrice: number) => {

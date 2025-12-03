@@ -5,16 +5,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useMarketData } from '@/hooks'
 import {
-  DollarSign,
   TrendingUp,
   TrendingDown,
   Minus,
   Activity,
-  BarChart3,
-  Clock,
   AlertTriangle,
+  Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+// Fixed card height constant - must match BCBRateCard for layout consistency
+const CARD_HEIGHT = 'h-[420px]'
 
 // Format relative time from timestamp
 function formatTimeAgo(timestamp: Date): string {
@@ -91,49 +92,73 @@ export function MarketDataCard() {
 
   if (error || !snapshot || !displayValues) {
     return (
-      <Card className="col-span-full">
-        <CardContent className="pt-6">
+      <Card className={`${CARD_HEIGHT} flex flex-col`}>
+        <CardHeader className="pb-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg font-semibold">Datos del Mercado P2P</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>{error || 'No hay datos de mercado disponibles'}</p>
+            <p className="text-sm">{error || 'No hay datos de mercado disponibles'}</p>
           </div>
         </CardContent>
       </Card>
     )
   }
 
+  // Get quality color class
+  const getQualityColor = () => {
+    if (displayValues.quality >= 0.8) return 'text-green-600 dark:text-green-500'
+    if (displayValues.quality >= 0.5) return 'text-yellow-600 dark:text-yellow-500'
+    return 'text-red-600 dark:text-red-500'
+  }
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Datos del Mercado P2P</CardTitle>
-          <Badge variant="outline" className="text-xs">
-            <Clock className="h-3 w-3 mr-1" />
-            {timeAgo}
-          </Badge>
+    <Card className={`${CARD_HEIGHT} flex flex-col`}>
+      {/* Header - Fixed height h-12 (48px) */}
+      <CardHeader className="h-12 flex items-center shrink-0 py-0 px-4">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2 min-w-0">
+            <Activity className="h-5 w-5 text-primary shrink-0" />
+            <CardTitle className="text-lg font-semibold truncate">Datos del Mercado P2P</CardTitle>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-muted-foreground hidden sm:inline">Binance P2P</span>
+            <span className={cn('text-xs font-medium', getQualityColor())}>
+              {displayValues.qualityPercent}%
+            </span>
+            <Badge variant="outline" className="text-xs">
+              <Clock className="h-3 w-3 mr-1" />
+              {timeAgo}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {/* Main Price Display */}
-        <div className="flex items-center justify-between mb-6">
+
+      {/* Content - Optimized heights to fit in 420px card */}
+      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
+        {/* Main Price Display - Fixed height 60px */}
+        <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">Precio USDT/BOB</p>
+            <p className="text-xs text-muted-foreground mb-0.5">Precio USDT/BOB</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold tracking-tight">
+              <span className="text-3xl font-bold tracking-tight">
                 {displayValues.sellPrice}
               </span>
-              <span className="text-lg text-muted-foreground">BOB</span>
+              <span className="text-sm text-muted-foreground">BOB</span>
             </div>
           </div>
-          <div className="flex flex-col items-end">
-            {/* Price Change - using backend computed values directly */}
+          <div className="flex flex-col items-end gap-1">
             {showPriceChange && priceChange !== null && priceChange !== undefined ? (
               <Badge
                 variant={getPriceChangeBadgeVariant()}
                 className="flex items-center gap-1 text-sm px-3 py-1"
               >
                 <PriceChangeIcon className="h-4 w-4" />
-                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+                {priceChange.toFixed(2)}%
               </Badge>
             ) : (
               <Badge variant="secondary" className="flex items-center gap-1 text-sm px-3 py-1">
@@ -141,12 +166,11 @@ export function MarketDataCard() {
                 Sin cambios
               </Badge>
             )}
-            {/* Time gap warning from backend */}
             {snapshot.timeGapWarning && snapshot.timeGapMinutes !== null && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="text-xs text-warning flex items-center gap-1 mt-1">
+                    <span className="text-xs text-warning flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
                       Hace {snapshot.timeGapMinutes}m
                     </span>
@@ -157,77 +181,55 @@ export function MarketDataCard() {
                 </Tooltip>
               </TooltipProvider>
             )}
-            {!snapshot.timeGapWarning && (
-              <span className="text-xs text-muted-foreground mt-1">
-                {showPriceChange ? 'vs. última lectura' : 'Primera lectura'}
-              </span>
-            )}
           </div>
         </div>
 
-        {/* Secondary Metrics Grid - 3 columns if no traders, 4 if traders exist */}
-        <div className={cn(
-          "grid gap-4",
-          displayValues.hasActiveTraders ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3"
-        )}>
-          <MetricItem
-            icon={DollarSign}
-            label="Precio Compra"
-            value={`${displayValues.buyPrice} BOB`}
-            color="text-green-500"
-          />
-          <MetricItem
-            icon={DollarSign}
-            label="Precio Venta"
-            value={`${displayValues.sellPrice} BOB`}
-            color="text-red-500"
-          />
-          <MetricItem
-            icon={BarChart3}
-            label="Volumen Total"
-            value={`${displayValues.volume} USDT`}
-            color="text-purple-500"
-          />
-          {/* Only show traders if > 0, otherwise show N/D indicator */}
-          {displayValues.hasActiveTraders ? (
-            <MetricItem
-              icon={BarChart3}
-              label="Traders Activos"
-              value={displayValues.activeTraders.toString()}
-              color="text-orange-500"
-            />
-          ) : null}
+        {/* Buy/Sell/Spread - Fixed height 90px */}
+        <div className="h-[90px] bg-muted/30 rounded-lg p-3 flex flex-col justify-center shrink-0 mt-1">
+          <div className="flex items-center justify-between text-sm h-7">
+            <span className="text-muted-foreground text-left">Compra</span>
+            <span className="font-semibold text-green-600 dark:text-green-500 text-right">
+              {displayValues.buyPrice} BOB
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm h-7">
+            <span className="text-muted-foreground text-left">Venta</span>
+            <span className="font-semibold text-red-600 dark:text-red-500 text-right">
+              {displayValues.sellPrice} BOB
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm h-7 pt-1 border-t border-border/50">
+            <span className="text-muted-foreground text-left">Spread</span>
+            <span className="font-medium text-muted-foreground text-right">{displayValues.spread}%</span>
+          </div>
         </div>
 
-        {/* Data Quality Indicator */}
-        <div className="mt-4 pt-4 border-t border-border">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span className="text-sm text-muted-foreground">Calidad de Datos</span>
-            <div className="flex items-center gap-2">
-              <div className="w-20 sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full rounded-full transition-all',
-                    displayValues.quality >= 0.8 ? 'bg-green-500' :
-                    displayValues.quality >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                  )}
-                  style={{ width: `${displayValues.quality * 100}%` }}
-                />
-              </div>
-              <Badge
-                variant={
-                  displayValues.quality >= 0.8 ? 'success' :
-                  displayValues.quality >= 0.5 ? 'warning' : 'destructive'
-                }
-                className="text-xs"
-              >
-                {displayValues.qualityPercent}%
-              </Badge>
-            </div>
+        {/* Volume and Traders - Fixed height 48px */}
+        <div className="h-[48px] grid grid-cols-2 gap-2 shrink-0 mt-1">
+          <div className="bg-muted/20 rounded-lg flex flex-col items-center justify-center">
+            <div className="text-xs text-muted-foreground">Volumen</div>
+            <div className="font-semibold text-sm">{displayValues.volume} USDT</div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Spread: {displayValues.spread}% • 
-            Actualización automática cada 30 segundos
+          <div className="bg-muted/20 rounded-lg flex flex-col items-center justify-center">
+            <div className="text-xs text-muted-foreground">Traders Activos</div>
+            <div className="font-semibold text-sm">{displayValues.activeTraders}</div>
+          </div>
+        </div>
+
+        {/* Previous Price - Fixed height 40px */}
+        <div className="h-[40px] bg-muted/20 rounded-lg flex items-center px-3 shrink-0 mt-1">
+          <div className="flex items-center justify-between text-sm w-full">
+            <span className="text-muted-foreground text-left">Precio Anterior</span>
+            <span className="font-semibold text-right">
+              {snapshot?.previousPrice ? snapshot.previousPrice.toFixed(2) : 'N/D'} BOB
+            </span>
+          </div>
+        </div>
+
+        {/* Footer - Fixed height 32px */}
+        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+          <p className="text-xs text-muted-foreground">
+            Binance P2P es actualizado cada 30 minutos
           </p>
         </div>
       </CardContent>
@@ -235,54 +237,74 @@ export function MarketDataCard() {
   )
 }
 
-interface MetricItemProps {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: string
-  color?: string
-}
-
-function MetricItem({ icon: Icon, label, value, color }: MetricItemProps) {
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-      <div className={cn('p-2 rounded-full bg-background', color)}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-sm font-semibold">{value}</p>
-      </div>
-    </div>
-  )
-}
-
 function MarketDataSkeleton() {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-5 w-20" />
+    <Card className={`${CARD_HEIGHT} flex flex-col`}>
+      {/* Header - Fixed height h-12 */}
+      <CardHeader className="h-12 flex items-center shrink-0 py-0 px-4">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-16 hidden sm:block" />
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="h-5 w-20 rounded" />
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between mb-6">
+
+      {/* Content - Optimized heights */}
+      <CardContent className="flex-1 flex flex-col justify-center px-4 pb-3 pt-1">
+        {/* Main price - h-[60px] */}
+        <div className="h-[60px] flex items-center justify-between shrink-0">
           <div>
-            <Skeleton className="h-4 w-24 mb-2" />
-            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-3 w-20 mb-1" />
+            <Skeleton className="h-9 w-24" />
           </div>
-          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-7 w-24 rounded" />
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <div>
-                <Skeleton className="h-3 w-16 mb-1" />
-                <Skeleton className="h-4 w-20" />
-              </div>
-            </div>
-          ))}
+
+        {/* Buy/Sell/Spread - h-[90px] */}
+        <div className="h-[90px] bg-muted/30 rounded-lg p-3 flex flex-col justify-center shrink-0 mt-1">
+          <div className="flex justify-between h-7 items-center">
+            <Skeleton className="h-4 w-16 text-left" />
+            <Skeleton className="h-4 w-20 text-right" />
+          </div>
+          <div className="flex justify-between h-7 items-center">
+            <Skeleton className="h-4 w-16 text-left" />
+            <Skeleton className="h-4 w-20 text-right" />
+          </div>
+          <div className="flex justify-between h-7 items-center pt-1 border-t border-border/50">
+            <Skeleton className="h-4 w-16 text-left" />
+            <Skeleton className="h-4 w-16 text-right" />
+          </div>
+        </div>
+
+        {/* Volume/Traders - h-[48px] */}
+        <div className="h-[48px] grid grid-cols-2 gap-2 shrink-0 mt-1">
+          <div className="bg-muted/20 rounded-lg flex flex-col items-center justify-center">
+            <Skeleton className="h-3 w-16 mb-1" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          <div className="bg-muted/20 rounded-lg flex flex-col items-center justify-center">
+            <Skeleton className="h-3 w-20 mb-1" />
+            <Skeleton className="h-4 w-8" />
+          </div>
+        </div>
+
+        {/* Previous Price - h-[40px] */}
+        <div className="h-[40px] bg-muted/20 rounded-lg flex items-center px-3 shrink-0 mt-1">
+          <div className="flex justify-between w-full">
+            <Skeleton className="h-4 w-24 text-left" />
+            <Skeleton className="h-4 w-20 text-right" />
+          </div>
+        </div>
+
+        {/* Footer - h-8 */}
+        <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
+          <Skeleton className="h-3 w-40" />
         </div>
       </CardContent>
     </Card>

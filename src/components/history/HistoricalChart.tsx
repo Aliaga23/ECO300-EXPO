@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectOption } from '@/components/ui/select'
-import { useAggregatedData, useBCBRate, formatDataSource } from '@/hooks'
+import { useAggregatedData, formatDataSource } from '@/hooks'
+import { useBCBRateContext, formatRateType } from '@/contexts/BCBRateContext'
 import type { TimeRange, Granularity } from '@/types/api'
 import {
   Line,
@@ -110,7 +111,10 @@ function formatTooltipDate(timestamp: string, granularity: Granularity, recordCo
 }
 
 export function HistoricalChart() {
-  const { officialRate } = useBCBRate()
+  const { selectedRateType, currentRate } = useBCBRateContext()
+  
+  // Extract the sell price from the selected rate for calculations
+  const selectedRateNumber = currentRate ? parseFloat(currentRate.sell) : 0
   
   // State for controls
   const [timeRange, setTimeRange] = useState<TimeRange>('7d')
@@ -137,9 +141,9 @@ export function HistoricalChart() {
     if (!aggregatedData?.points) return []
     
     return aggregatedData.points.map((point) => {
-      // Calculate premium from official rate
-      const premium = officialRate > 0 
-        ? ((point.average_sell_price - officialRate) / officialRate) * 100 
+      // Calculate premium from selected BCB rate
+      const premium = selectedRateNumber > 0 
+        ? ((point.average_sell_price - selectedRateNumber) / selectedRateNumber) * 100 
         : 0
       
       return {
@@ -150,10 +154,10 @@ export function HistoricalChart() {
         spread: point.spread_percentage,
         recordCount: point.record_count,
         premium,
-        officialRate,
+        officialRate: selectedRateNumber, // Use selected rate for reference line
       }
     })
-  }, [aggregatedData?.points, officialRate])
+  }, [aggregatedData?.points, selectedRateNumber])
 
   // Calculate tick interval based on data density
   const tickInterval = useMemo(() => {
@@ -393,7 +397,7 @@ export function HistoricalChart() {
             className="cursor-pointer"
             onClick={() => setShowOfficialRate(!showOfficialRate)}
           >
-            Tasa Oficial BCB
+            Tasa {formatRateType(selectedRateType)} BCB
           </Badge>
           <Badge
             variant={showPremium ? 'default' : 'outline'}
@@ -542,7 +546,7 @@ export function HistoricalChart() {
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={false}
-                  name="Tasa Oficial BCB"
+                  name={`Tasa ${formatRateType(selectedRateType)} BCB`}
                   activeDot={{ r: 4, stroke: CHART_COLORS.officialRate }}
                 />
               )}
