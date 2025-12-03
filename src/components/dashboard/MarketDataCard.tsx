@@ -33,7 +33,7 @@ export function MarketDataCard() {
   // State for live "time ago" updates
   const [timeAgo, setTimeAgo] = useState<string>('Actualizando...')
 
-  // Update "time ago" every 30 seconds
+  // Update "time ago" every 30 seconds (display refresh, not data fetch)
   useEffect(() => {
     if (!snapshot) return
 
@@ -230,7 +230,7 @@ export function MarketDataCard() {
         {/* Footer - Fixed height 32px */}
           <div className="h-8 flex items-center justify-center border-t border-border shrink-0">
             <p className="text-xs text-muted-foreground">
-              Binance P2P es actualizado cada 30 minutos
+              Binance P2P es actualizado cada 10 minutos
             </p>
           </div>
         </div>

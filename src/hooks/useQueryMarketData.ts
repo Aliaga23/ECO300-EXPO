@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { marketDataApi } from '@/services/api'
 import type { AggregatedMarketDataRequest } from '@/types/api'
 
-// Centralized hook for latest market data - replaces all independent polling
+// Centralized hook for latest market data - optimized for 10-minute backend updates
 export function useLatestMarketData() {
   return useQuery({
     queryKey: ['marketData', 'latest'],
@@ -10,9 +10,9 @@ export function useLatestMarketData() {
       const response = await marketDataApi.getLatest()
       return response
     },
-    staleTime: 30000, // 30 seconds - matches current polling frequency
-    gcTime: 300000, // 5 minutes ( React Query v5 uses gcTime instead of cacheTime
-    refetchInterval: 30000, // Automatic background refetch every 30 seconds
+    staleTime: 30000, // 30 seconds - data freshness threshold
+    gcTime: 600000, // 10 minutes - cache matches backend update frequency
+    refetchInterval: 600000, // Automatic background refetch every 10 minutes (matches backend)
     refetchIntervalInBackground: false, // Only refetch when tab is active
   })
 }

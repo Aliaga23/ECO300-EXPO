@@ -151,7 +151,7 @@ export default function DocumentationPage() {
                   <h4 className="font-medium">Binance P2P</h4>
                   <p className="text-sm text-muted-foreground">
                     Datos de precios y volúmenes del mercado P2P para el par USDT/BOB. 
-                    Actualización cada 30 segundos. Incluye ofertas de compra y venta, 
+                    Actualización cada 10 minutos. Incluye ofertas de compra y venta, 
                     volumen disponible, y métricas de traders.
                   </p>
                   <Badge variant="outline" className="mt-2">Tiempo real</Badge>
