@@ -14,7 +14,8 @@ import {
 import { useMarketData } from '@/hooks'
 import { useBCBRateContext, calculatePremium, formatRateType } from '@/contexts/BCBRateContext'
 import { BCBRateTypeSelectorCompact, BCBRateTypeSelectorMobile } from './BCBRateTypeSelector'
-import { Landmark, Info, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react'
+import { Landmark, Info, TrendingUp, TrendingDown, AlertTriangle, RefreshCw } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // Fixed card height constant - ensures consistency across all states
 const CARD_HEIGHT = 'h-[420px]'
@@ -24,7 +25,8 @@ export function BCBRateCard() {
     selectedRateType, 
     currentRate, 
     loading: bcbLoading, 
-    error: bcbError 
+    error: bcbError,
+    refresh
   } = useBCBRateContext()
   
   const { snapshot, loading: marketLoading } = useMarketData()
@@ -90,6 +92,24 @@ export function BCBRateCard() {
             <CardTitle className="text-lg font-semibold">Tipo de Cambio BCB</CardTitle>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    onClick={refresh}
+                    disabled={bcbLoading}
+                    className="h-7 w-7"
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", bcbLoading && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Actualizar datos BCB</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {/* Mobile-only compact selector */}
             <div className="block sm:hidden">
               <BCBRateTypeSelectorMobile />

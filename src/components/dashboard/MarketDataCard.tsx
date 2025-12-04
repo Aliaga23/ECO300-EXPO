@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useMarketData } from '@/hooks'
 import {
@@ -11,6 +12,7 @@ import {
   Activity,
   AlertTriangle,
   Clock,
+  RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -28,7 +30,7 @@ function formatTimeAgo(timestamp: Date): string {
 }
 
 export function MarketDataCard() {
-  const { snapshot, loading, error } = useMarketData()
+  const { snapshot, loading, error, refresh } = useMarketData()
   
   // State for live "time ago" updates
   const [timeAgo, setTimeAgo] = useState<string>('Actualizando...')
@@ -126,6 +128,24 @@ export function MarketDataCard() {
             <CardTitle className="text-lg font-semibold truncate">Datos del Mercado P2P</CardTitle>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon-sm" 
+                    onClick={refresh}
+                    disabled={loading}
+                    className="h-7 w-7"
+                  >
+                    <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Actualizar datos</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <span className="text-xs text-muted-foreground hidden sm:inline">Binance P2P</span>
             <span className={cn('text-xs font-medium', getQualityColor())}>
               {displayValues.qualityPercent}%

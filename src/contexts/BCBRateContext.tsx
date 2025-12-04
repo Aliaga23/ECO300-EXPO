@@ -15,6 +15,7 @@ interface BCBRateContextValue {
   currentRate: ExchangeRateDetail | null // Selected rate
   loading: boolean
   error: Error | null
+  refresh: () => Promise<void>
 }
 
 // Create context with default values
@@ -27,6 +28,7 @@ interface BCBRateProviderProps {
   referentialRate: ExchangeRateDetail | null
   loading: boolean
   error: Error | null
+  refresh: () => Promise<void>
 }
 
 // Provider component
@@ -35,7 +37,8 @@ export function BCBRateProvider({
   officialRate, 
   referentialRate, 
   loading, 
-  error 
+  error,
+  refresh 
 }: BCBRateProviderProps) {
   const [selectedRateType, setSelectedRateTypeState] = useState<BCBRateType>('official')
 
@@ -72,6 +75,7 @@ export function BCBRateProvider({
     currentRate,
     loading,
     error,
+    refresh,
   }
 
   return (
@@ -83,7 +87,7 @@ export function BCBRateProvider({
 
 // Global wrapper that fetches BCB rates and provides context
 export function BCBRateProviderWrapper({ children }: { children: ReactNode }) {
-  const { officialRate, referentialRate, loading, error } = useBCBRate()
+  const { officialRate, referentialRate, loading, error, refresh } = useBCBRate()
   
   return (
     <BCBRateProvider 
@@ -91,6 +95,7 @@ export function BCBRateProviderWrapper({ children }: { children: ReactNode }) {
       referentialRate={referentialRate} 
       loading={loading} 
       error={error ? new Error(error) : null}
+      refresh={refresh}
     >
       {children}
     </BCBRateProvider>
