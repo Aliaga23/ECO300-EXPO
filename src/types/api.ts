@@ -241,6 +241,14 @@ export interface ScenarioResponse {
   is_hypothetical?: boolean;
   warning_message?: string;
   elasticity_category?: 'elastic' | 'inelastic' | 'unit_elastic';
+  // New backend fields for micro-variation warnings
+  warnings?: string[];  // Array of warning messages for micro-variations
+  reliable?: boolean;   // Indicates if result is reliable (true when variations >= 1%)
+  details?: {
+    price_change_percent: number;
+    volume_change_percent: number;
+    elasticity_type: string;
+  };
 }
 
 // ============================================

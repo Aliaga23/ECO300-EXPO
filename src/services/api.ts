@@ -30,6 +30,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // CRITICAL: Sends session cookies for session-based history isolation
   headers: {
     'Content-Type': 'application/json',
   },
@@ -350,6 +351,33 @@ export const simulatorApi = {
   async calculate(request: ScenarioRequest): Promise<ScenarioResponse> {
     try {
       const response = await apiClient.post<ScenarioResponse>('/simulator/scenario/', request);
+      
+      // Check if response contains error payload even with HTTP 200
+      if (response.data && 'error' in response.data) {
+        const errorData = response.data as { error: string; details?: any };
+        throw new ApiException(
+          200,
+          errorData.error || 'Calculation error',
+          errorData.details || errorData.error
+        );
+      }
+      
+      // Validate response structure to prevent UI crashes
+      if (!response.data || 
+          typeof response.data.elasticity !== 'number' ||
+          typeof response.data.abs_value !== 'number' ||
+          typeof response.data.classification !== 'string' ||
+          typeof response.data.percentage_change_quantity !== 'number' ||
+          typeof response.data.percentage_change_price !== 'number' ||
+          typeof response.data.quantity_change !== 'number' ||
+          typeof response.data.price_change !== 'number') {
+        throw new ApiException(
+          200,
+          'Invalid response format',
+          'The server returned an unexpected response format'
+        );
+      }
+      
       return response.data;
     } catch (error) {
       throw handleApiError(error as AxiosError<APIError>);

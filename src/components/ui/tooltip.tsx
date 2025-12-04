@@ -95,7 +95,7 @@ function TooltipContent({
     <div
       data-slot="tooltip-content"
       className={cn(
-        "absolute z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95",
+        "absolute z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 max-w-xs",
         positionClasses[side],
         className
       )}

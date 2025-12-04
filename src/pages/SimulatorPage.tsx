@@ -4,6 +4,7 @@ import { useCalculationHistory } from '@/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Calculator, Info } from 'lucide-react'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 export default function SimulatorPage() {
   const { history } = useCalculationHistory()
@@ -90,7 +91,9 @@ export default function SimulatorPage() {
         </Card>
 
         {/* Simulator Component */}
-        <ScenarioSimulator lastCalculation={parsedLastCalculation} />
+        <ErrorBoundary>
+          <ScenarioSimulator lastCalculation={parsedLastCalculation} />
+        </ErrorBoundary>
 
         {/* Educational Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

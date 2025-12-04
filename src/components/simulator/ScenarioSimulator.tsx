@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useSimulator } from '@/hooks'
+import { ErrorDisplay } from '@/components/ErrorDisplay'
 import type { ScenarioRequest, ScenarioResponse, ParsedElasticityCalculation } from '@/types/api'
 import {
   Calculator,
@@ -21,6 +22,7 @@ import {
   HelpCircle,
   AlertTriangle,
   Activity,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -29,7 +31,7 @@ interface ScenarioSimulatorProps {
 }
 
 export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
-  const { result, loading, error, validationErrors, calculate, reset } = useSimulator()
+  const { result, loading, error, validationErrors, validationWarnings, calculate, reset } = useSimulator()
   
   // Default example values
   const [priceInitial, setPriceInitial] = useState('7.00')
@@ -92,7 +94,8 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
                     value={priceInitial}
                     onChange={formatNumber(priceInitial, setPriceInitial)}
                     placeholder="7.00"
-                    className={cn(validationErrors.price_initial && 'border-destructive')}
+                    disabled={loading}
+                    className={cn(validationErrors.price_initial && 'border-destructive', loading && 'opacity-50')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">BOB</span>
                 </div>
@@ -109,7 +112,8 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
                     value={priceFinal}
                     onChange={formatNumber(priceFinal, setPriceFinal)}
                     placeholder="7.20"
-                    className={cn(validationErrors.price_final && 'border-destructive')}
+                    disabled={loading}
+                    className={cn(validationErrors.price_final && 'border-destructive', loading && 'opacity-50')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">BOB</span>
                 </div>
@@ -136,7 +140,8 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
                     value={quantityInitial}
                     onChange={formatNumber(quantityInitial, setQuantityInitial)}
                     placeholder="125000"
-                    className={cn(validationErrors.quantity_initial && 'border-destructive')}
+                    disabled={loading}
+                    className={cn(validationErrors.quantity_initial && 'border-destructive', loading && 'opacity-50')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">USDT</span>
                 </div>
@@ -153,7 +158,8 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
                     value={quantityFinal}
                     onChange={formatNumber(quantityFinal, setQuantityFinal)}
                     placeholder="118000"
-                    className={cn(validationErrors.quantity_final && 'border-destructive')}
+                    disabled={loading}
+                    className={cn(validationErrors.quantity_final && 'border-destructive', loading && 'opacity-50')}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">USDT</span>
                 </div>
@@ -164,11 +170,30 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
             </div>
           </div>
 
+          {/* Validation Warnings Alert */}
+          {validationWarnings.length > 0 && (
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Advertencia sobre los datos</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1">
+                  {validationWarnings.map((warning, index) => (
+                    <li key={index} className="text-sm">{warning.message}</li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-sm font-medium">
+                  Puedes continuar, pero los resultados pueden ser sensibles a pequeños cambios.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Error Alert */}
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <ErrorDisplay 
+              error={error} 
+              onRetry={() => handleCalculate()}
+            />
           )}
 
           {/* Action Buttons */}
@@ -178,11 +203,22 @@ export function ScenarioSimulator({ lastCalculation }: ScenarioSimulatorProps) {
               disabled={loading}
               className="w-full sm:flex-1 h-12 sm:h-11"
             >
-              {loading ? 'Calculando...' : 'Calcular Elasticidad'}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Calculando...
+                </>
+              ) : (
+                <>
+                  <Calculator className="mr-2 h-4 w-4" />
+                  Calcular Elasticidad
+                </>
+              )}
             </Button>
             <Button
               variant="outline"
               onClick={handleReset}
+              disabled={loading}
               className="w-full sm:w-auto h-12 sm:h-11"
             >
               <RotateCcw className="h-4 w-4 mr-2 sm:mr-0" />
@@ -267,11 +303,11 @@ function SimulatorResults({ result, lastCalculation, showComparison, onToggleCom
   const effectiveCategory = result.elasticity_category ?? result.classification;
   
   const classConfig = effectiveCategory === 'elastic' 
-    ? { label: 'ELÁSTICA', variant: 'elastic' as const, icon: TrendingUp, color: 'text-blue-500' }
+    ? { label: 'ELÁSTICA', variant: 'elastic' as const, icon: TrendingUp, color: 'text-blue-600 dark:text-blue-400' }
     : effectiveCategory === 'inelastic'
-    ? { label: 'INELÁSTICA', variant: 'inelastic' as const, icon: TrendingDown, color: 'text-red-500' }
+    ? { label: 'INELÁSTICA', variant: 'inelastic' as const, icon: TrendingDown, color: 'text-red-600 dark:text-red-400' }
     : effectiveCategory === 'unitary' || effectiveCategory === 'unit_elastic'
-    ? { label: 'UNITARIA', variant: 'unitary' as const, icon: Minus, color: 'text-yellow-500' }
+    ? { label: 'UNITARIA', variant: 'unitary' as const, icon: Minus, color: 'text-yellow-600 dark:text-yellow-400' }
     : { label: 'N/A', variant: 'secondary' as const, icon: Activity, color: 'text-muted-foreground' }
 
   const ClassIcon = classConfig.icon
@@ -279,16 +315,35 @@ function SimulatorResults({ result, lastCalculation, showComparison, onToggleCom
   // Handle hypothetical scenario warning with backward compatibility
   const isHypothetical = result.is_hypothetical ?? false;
   const warningMessage = result.warning_message ?? null;
+  
+  // Handle new micro-variation warnings from backend
+  const hasBackendWarnings = result.warnings && result.warnings.length > 0;
+  const isReliable = result.reliable ?? true; // Default to true for backward compatibility
 
   return (
     <div className="space-y-6">
+      {/* Backend Micro-Variation Warnings */}
+      {hasBackendWarnings && (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Advertencia sobre los datos</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1">
+              {result.warnings!.map((warning, index) => (
+                <li key={index} className="text-sm">{warning}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Main Result */}
       <div className="text-center p-6 rounded-xl bg-muted/50 border">
         <p className="text-sm text-muted-foreground mb-2">Coeficiente de Elasticidad</p>
         <div className={cn('text-4xl font-bold mb-2', classConfig.color)}>
           {result.elasticity.toFixed(4)}
         </div>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 flex-wrap">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -313,6 +368,17 @@ function SimulatorResults({ result, lastCalculation, showComparison, onToggleCom
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          
+          {/* Reliability Badge */}
+          {isReliable ? (
+            <Badge variant="success" className="text-xs">
+              Resultado confiable
+            </Badge>
+          ) : (
+            <Badge variant="warning" className="text-xs">
+              Resultado con reservas
+            </Badge>
+          )}
           
           {/* Hypothetical Badge */}
           {isHypothetical && (
