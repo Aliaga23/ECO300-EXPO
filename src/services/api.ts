@@ -25,8 +25,8 @@ import type {
 // API Configuration
 // ============================================
 
-// Use relative path for proxy to hide backend URL from client
-const API_BASE_URL = '/api/v1';
+// Use environment variable for production compatibility
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
