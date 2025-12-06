@@ -30,7 +30,7 @@ export function useMarketData(): UseMarketDataReturn {
 
   // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    await refetch();
+    await refetch({ cancelRefetch: true });
   }, [refetch]);
 
   return { 
@@ -103,7 +103,7 @@ export function useBCBRate(): UseBCBRateReturn {
 
   // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    await refetch();
+    await refetch({ cancelRefetch: true });
   }, [refetch]);
 
   return { 
@@ -202,7 +202,7 @@ export function useAggregatedData(params: UseAggregatedDataParams): UseAggregate
   
   // Use React Query's refetch instead of manual refresh
   const refresh = useCallback(async () => {
-    await refetch();
+    await refetch({ cancelRefetch: true });
   }, [refetch]);
 
   return { 

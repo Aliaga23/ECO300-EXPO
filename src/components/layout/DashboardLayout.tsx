@@ -3,6 +3,7 @@ import { DashboardHeader } from './DashboardHeader.tsx'
 import { DashboardFooter } from './DashboardFooter.tsx'
 import { MobileNav } from './MobileNav.tsx'
 import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -10,10 +11,21 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, className }: DashboardLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Load saved preference from localStorage, default to false
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved ? JSON.parse(saved) : false
+  })
+
+  // Save preference to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed))
+  }, [sidebarCollapsed])
+
   return (
     <div className="min-h-screen bg-background">
       {/* Desktop Sidebar - hidden on mobile */}
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       
       {/* Mobile Navigation - hidden on desktop */}
       <MobileNav />
@@ -22,7 +34,7 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
       <div className={cn(
         'transition-all duration-300',
         'pt-14 lg:pt-0', // Account for mobile header
-        'lg:pl-64' // Only add sidebar padding on desktop
+        sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64' // Dynamic sidebar padding based on collapse state
       )}>
         {/* Desktop Header - hidden on mobile (mobile has its own header) */}
         <div className="hidden lg:block">

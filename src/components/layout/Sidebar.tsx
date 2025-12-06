@@ -32,18 +32,30 @@ const navItems: NavItem[] = [
 
 interface SidebarProps {
   className?: string
+  collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar({ className, collapsed = false, onToggleCollapse }: SidebarProps) {
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(false)
+  const [internalCollapsed, setInternalCollapsed] = useState(false)
+  
+  // Use external collapsed state if provided, otherwise use internal state
+  const isCollapsed = collapsed !== undefined ? collapsed : internalCollapsed
+  const handleToggle = () => {
+    if (onToggleCollapse) {
+      onToggleCollapse()
+    } else {
+      setInternalCollapsed(!internalCollapsed)
+    }
+  }
 
   return (
     <aside
       className={cn(
         'fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300',
         'hidden lg:block', // Hide on mobile, show on desktop
-        collapsed ? 'w-16' : 'w-64',
+        isCollapsed ? 'w-16' : 'w-64',
         className
       )}
     >
@@ -51,10 +63,10 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Logo */}
         <div className={cn(
           'flex h-16 items-center border-b border-border px-4',
-          collapsed ? 'justify-center' : 'gap-3'
+          isCollapsed ? 'justify-center' : 'gap-3'
         )}>
           <Bot className="h-7 w-7 text-primary shrink-0" />
-          {!collapsed && (
+          {!isCollapsed && (
             <span className="font-bold text-xl tracking-tight">ElasticBot</span>
           )}
         </div>
@@ -73,15 +85,15 @@ export function Sidebar({ className }: SidebarProps) {
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                  collapsed && 'justify-center px-2'
+                  isCollapsed && 'justify-center px-2'
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.title}</span>}
+                {!isCollapsed && <span>{item.title}</span>}
               </Link>
             )
 
-            if (collapsed) {
+            if (isCollapsed) {
               return (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>
@@ -102,7 +114,7 @@ export function Sidebar({ className }: SidebarProps) {
 
         {/* Back to Home */}
         <div className="p-2">
-          {collapsed ? (
+          {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -132,10 +144,10 @@ export function Sidebar({ className }: SidebarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn('w-full', collapsed && 'px-2')}
-            onClick={() => setCollapsed(!collapsed)}
+            className={cn('w-full justify-center', isCollapsed && 'px-2')}
+            onClick={handleToggle}
           >
-            {collapsed ? (
+            {isCollapsed ? (
               <ChevronRight className="h-4 w-4" />
             ) : (
               <>
@@ -147,7 +159,7 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
 
         {/* Footer Info */}
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="border-t border-border p-4">
             <p className="text-xs text-muted-foreground text-center">
               ECO-300 • UAGRM

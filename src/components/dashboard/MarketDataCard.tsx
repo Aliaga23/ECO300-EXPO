@@ -34,6 +34,11 @@ export function MarketDataCard() {
   
   // State for live "time ago" updates
   const [timeAgo, setTimeAgo] = useState<string>('Actualizando...')
+  
+  // State for cooldown timer
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0)
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0)
+  const COOLDOWN_SECONDS = 30 // 30 seconds cooldown
 
   // Update "time ago" every 30 seconds (display refresh, not data fetch)
   useEffect(() => {
@@ -49,6 +54,33 @@ export function MarketDataCard() {
 
     return () => clearInterval(interval)
   }, [snapshot?.timestamp])
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (lastRefreshTime === 0) return
+
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastRefreshTime) / 1000)
+      const remaining = Math.max(0, COOLDOWN_SECONDS - elapsed)
+      
+      setCooldownRemaining(remaining)
+      
+      if (remaining === 0) {
+        setLastRefreshTime(0)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [lastRefreshTime])
+
+  // Handle refresh with cooldown
+  const handleRefresh = useCallback(async () => {
+    if (cooldownRemaining > 0) return // Still in cooldown
+    
+    await refresh()
+    setLastRefreshTime(Date.now())
+    setCooldownRemaining(COOLDOWN_SECONDS)
+  }, [refresh, cooldownRemaining])
 
   // Use backend-computed price change - NO local calculations
   const priceChange = snapshot?.priceChangePercentage
@@ -131,18 +163,27 @@ export function MarketDataCard() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon-sm" 
-                    onClick={refresh}
-                    disabled={loading}
-                    className="h-7 w-7"
-                  >
-                    <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-                  </Button>
+                  <span className="inline-block">
+                    <Button 
+                      variant="ghost" 
+                      size="icon-sm" 
+                      onClick={handleRefresh}
+                      disabled={loading || cooldownRemaining > 0}
+                      className="h-7 w-7"
+                    >
+                      <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+                    </Button>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Actualizar datos</p>
+                  <p>
+                    {cooldownRemaining > 0 
+                      ? `Recargado recientemente - espera ${cooldownRemaining}s` 
+                      : loading 
+                        ? "Actualizando..." 
+                        : "Actualizar datos"
+                    }
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
