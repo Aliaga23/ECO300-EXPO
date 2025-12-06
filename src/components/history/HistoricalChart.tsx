@@ -123,11 +123,11 @@ export function HistoricalChart() {
   const [showPremium, setShowPremium] = useState(true)
   const [showOfficialRate, setShowOfficialRate] = useState(true)
 
-  // Fetch aggregated data from backend (all sources: P2P + OHLC)
+  // Fetch aggregated data from backend (all sources: P2P + BINANCE)
   const { data: aggregatedData, loading, error, refresh } = useAggregatedData({
     timeRange,
     granularity,
-    source: 'all', // Combine P2P and OHLC data for complete coverage
+    source: 'all', // Combine P2P and BINANCE data for complete coverage
   })
 
   // Auto-update granularity when time range changes
@@ -207,7 +207,7 @@ export function HistoricalChart() {
     ])
     
     const csv = [
-      [`# Exportación ${modeLabel} - Rango: ${timeRange} - Fuente: ${aggregatedData.data_source}`],
+      [`# Exportación ${modeLabel} - Rango: ${timeRange} - Fuente: ${formatDataSource(aggregatedData.data_source)}`],
       headers,
       ...rows
     ].map((row) => row.join(',')).join('\n')

@@ -402,8 +402,8 @@ export function ElasticityResults({
                   <div>
                     <span className="text-muted-foreground">Fuente de Datos:</span>
                     <p className="font-medium">
-                      {calculation.calculationMetadata.data_source.type === 'external_ohlc_api' 
-                        ? 'OHLC Externo' 
+                      {calculation.calculationMetadata.data_source.type === 'binance_api' || calculation.calculationMetadata.data_source.type === 'external_ohlc_api'
+                        ? 'Binance' 
                         : calculation.calculationMetadata.data_source.type}
                       {calculation.calculationMetadata.data_source.timeframe && 
                         ` (${calculation.calculationMetadata.data_source.timeframe})`}
@@ -487,8 +487,8 @@ function DataSourceBadge({ metadata }: DataSourceBadgeProps) {
   const { type, timeframe, quality_score } = metadata.data_source
   
   // Format display based on source type
-  const isExternalOHLC = type === 'external_ohlc_api'
-  const sourceLabel = isExternalOHLC ? 'OHLC Externo' : type
+  const isExternalBinance = type === 'binance_api' || type === 'external_ohlc_api'
+  const sourceLabel = isExternalBinance ? 'Binance' : type
   const timeframeLabel = timeframe || '1h'
   const qualityLabel = quality_score && quality_score >= 0.9 ? 'Alta Calidad' : undefined
   

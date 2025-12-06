@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectOption } from '@/components/ui/select'
-import { useCalculationHistory } from '@/hooks'
+import { useCalculationHistory, formatDataSource } from '@/hooks'
 import type { CalculationSummary, CalculationStatus, CalculationMethod } from '@/types/api'
 import {
   Clock,
@@ -206,7 +206,7 @@ function HistoryRow({ calculation, onView, formatDate, getStatusConfig }: RowPro
   
   // Extract data source info from calculation_metadata
   const dataSourceType = calculation.calculation_metadata?.data_source?.type
-  const isExternalOHLC = dataSourceType === 'external_ohlc_api'
+  const isExternalBinance = dataSourceType === 'binance_api' || dataSourceType === 'external_ohlc_api'
   const dataPointsUsed = calculation.data_points_used
 
   return (
@@ -241,8 +241,8 @@ function HistoryRow({ calculation, onView, formatDate, getStatusConfig }: RowPro
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1 text-xs">
               <Database className="h-3 w-3 text-primary" />
-              <span className={isExternalOHLC ? 'text-primary' : ''}>
-                {isExternalOHLC ? 'OHLC' : dataSourceType}
+              <span className={isExternalBinance ? 'text-primary' : ''}>
+                {isExternalBinance ? 'Binance' : formatDataSource(dataSourceType)}
               </span>
             </div>
             {dataPointsUsed != null && (
@@ -282,7 +282,7 @@ function HistoryCard({ calculation, onView, formatDate, getStatusConfig }: RowPr
   
   // Extract data source info from calculation_metadata
   const dataSourceType = calculation.calculation_metadata?.data_source?.type
-  const isExternalOHLC = dataSourceType === 'external_ohlc_api'
+  const isExternalBinance = dataSourceType === 'binance_api' || dataSourceType === 'external_ohlc_api'
   const dataPointsUsed = calculation.data_points_used
 
   return (
@@ -325,8 +325,8 @@ function HistoryCard({ calculation, onView, formatDate, getStatusConfig }: RowPr
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Database className="h-3 w-3 text-primary" />
-            <span className={isExternalOHLC ? 'text-primary' : ''}>
-              {isExternalOHLC ? 'OHLC Externo' : dataSourceType}
+            <span className={isExternalBinance ? 'text-primary' : ''}>
+              {isExternalBinance ? 'Binance Externo' : formatDataSource(dataSourceType)}
             </span>
           </div>
           {dataPointsUsed != null && (

@@ -204,7 +204,7 @@ export function CalculationStatusModal({
                 <div className="text-xs text-muted-foreground">
                   <p className="font-medium text-destructive mb-1">Sugerencia:</p>
                   <p>
-                    Verifique que el rango de fechas seleccionado tenga datos OHLC disponibles.
+                    Verifique que el rango de fechas seleccionado tenga datos BINANCE disponibles.
                     Intente con un período más reciente o más corto.
                   </p>
                 </div>

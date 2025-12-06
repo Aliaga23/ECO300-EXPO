@@ -91,7 +91,7 @@ export interface MacroeconomicIndicator {
 
 export type TimeRange = '24h' | '7d' | '30d' | '90d';
 export type Granularity = 'hourly' | 'daily' | 'weekly';
-export type DataSource = 'p2p' | 'ohlc' | 'all';
+export type DataSource = 'p2p' | 'binance' | 'all';
 
 export interface AggregatedDataPoint {
   timestamp: string;
@@ -154,7 +154,7 @@ export interface ConfidenceInterval {
 
 // Data source information from backend
 export interface DataSourceInfo {
-  type: string; // e.g., "external_ohlc_api"
+  type: string; // e.g., "binance_api"
   timeframe?: string; // e.g., "1h"
   quality_score?: number;
 }
@@ -344,10 +344,10 @@ export interface ParsedElasticityCalculation {
 }
 
 // ============================================
-// OHLC Types (for future candlestick charts)
+// BINANCE Types (for candlestick charts)
 // ============================================
 
-export interface OHLCCandle {
+export interface BinanceCandle {
   date: string;
   open: number;
   high: number;
@@ -355,7 +355,7 @@ export interface OHLCCandle {
   close: number;
 }
 
-export interface OHLCBar {
+export interface BinanceBar {
   timestamp: Date;
   open: number;
   high: number;
@@ -366,8 +366,8 @@ export interface OHLCBar {
 export interface MarketSnapshotRawResponse {
   source: string;
   timeframe: string;
-  buy_candle?: OHLCCandle;
-  sell_candle?: OHLCCandle;
+  buy_candle?: BinanceCandle;
+  sell_candle?: BinanceCandle;
 }
 
 export interface ExtendedMarketSnapshot extends MarketSnapshot {

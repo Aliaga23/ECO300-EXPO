@@ -87,7 +87,7 @@ export function ElasticityForm({
   const [startDate, setStartDate] = useState(defaultStartDate)
   const [endDate, setEndDate] = useState(defaultEndDate)
   const [method, setMethod] = useState<CalculationMethod>('midpoint')
-  const [windowSize, setWindowSize] = useState<WindowSize>('hourly') // Default to hourly for OHLC
+  const [windowSize, setWindowSize] = useState<WindowSize>('hourly') // Default to hourly for BINANCE
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   // Update dates when coverage data loads
@@ -256,8 +256,7 @@ export function ElasticityForm({
         return null
       }
       
-      const sourceLabel = coverage.source === 'external_ohlc_api' ? 'OHLC Externo' : 
-                          coverage.source === 'p2p_scrape_json' ? 'P2P Scraper' : coverage.source
+      const sourceLabel = formatDataSource(coverage.source)
       const recordCount = coverage.total_snapshots ?? 0
       
       return {
@@ -452,8 +451,8 @@ export function ElasticityForm({
 
           {/* Help Text */}
           <p className="text-xs text-muted-foreground text-center">
-            {coverage?.source === 'external_ohlc_api' 
-              ? 'Análisis basado en velas OHLC de alta calidad (datos horarios)'
+            {coverage?.source === 'binance_api' || coverage?.source === 'external_ohlc_api'
+              ? 'Análisis basado en datos Binance de alta calidad (datos horarios)'
               : 'El cálculo puede tomar entre 5-15 segundos dependiendo del volumen de datos'
             }
           </p>

@@ -244,7 +244,7 @@ export const marketDataApi = {
             min_date: new Date(Math.min(...dates.map(d => d.getTime()))).toISOString(),
             max_date: new Date(Math.max(...dates.map(d => d.getTime()))).toISOString(),
             total_snapshots: historical.count,
-            source: 'external_ohlc_api',
+            source: 'binance_api',
           };
         }
         return null;

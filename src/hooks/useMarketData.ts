@@ -217,9 +217,10 @@ export function useAggregatedData(params: UseAggregatedDataParams): UseAggregate
 export function formatDataSource(source: string): string {
   const sourceLabels: Record<string, string> = {
     'p2p_scrape_json': 'P2P Scraper',
-    'external_ohlc_api': 'OHLC API',
+    'external_ohlc_api': 'Binance',
+    'binance_api': 'Binance',
     'p2p': 'P2P',
-    'ohlc': 'OHLC',
+    'binance': 'Binance',
     'all': 'Todas las fuentes',
   };
   return sourceLabels[source] || source;
