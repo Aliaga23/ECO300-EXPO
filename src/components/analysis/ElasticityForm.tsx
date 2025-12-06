@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { AdvancedFeaturesUnlockDialog } from '@/components/ui/ai-unlock-dialog'
 import { Calculator, AlertCircle, Clock, Database, Info, Lock } from 'lucide-react'
-import { useDataCoverage, useAdvancedFeaturesUnlock } from '@/hooks'
+import { useDataCoverage, useAdvancedFeaturesUnlock, formatDataSource } from '@/hooks'
 import type { CalculationMethod, WindowSize, CalculationRequest } from '@/types/api'
 
 interface ElasticityFormProps {
